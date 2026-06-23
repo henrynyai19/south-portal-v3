@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { LOGO_URL } from "@/lib/logo";
 import { Loader2 } from "lucide-react";
 
+const COPYRIGHT_YEAR = 2026;
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   component: AuthPage,
@@ -82,7 +84,7 @@ function AuthPage() {
             ))}
           </div>
         </div>
-        <div className="text-xs text-white/60">© {new Date().getFullYear()} Christ Embassy South Group. All rights reserved.</div>
+        <div className="text-xs text-white/60">© {COPYRIGHT_YEAR} Christ Embassy South Group. All rights reserved.</div>
       </div>
 
       <div className="flex items-center justify-center p-6">

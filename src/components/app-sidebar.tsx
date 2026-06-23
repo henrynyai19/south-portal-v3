@@ -4,6 +4,8 @@ import { LOGO_URL } from "@/lib/logo";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
+const COPYRIGHT_YEAR = 2026;
+
 interface NavItem { to: string; label: string; icon: React.ComponentType<{ className?: string }>; roles?: ("main_admin" | "sub_admin" | "submitter")[]; }
 
 const NAV: NavItem[] = [
@@ -59,7 +61,7 @@ export function AppSidebar({ onNav }: { onNav?: () => void }) {
         })}
       </nav>
       <div className="border-t border-sidebar-border p-4 text-[11px] text-sidebar-foreground/60">
-        © {new Date().getFullYear()} Christ Embassy South Group
+        © {COPYRIGHT_YEAR} Christ Embassy South Group
       </div>
     </aside>
   );
