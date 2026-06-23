@@ -1,149 +1,103 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { LOGO_URL } from "@/lib/logo";
-import { Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/auth")({
-  ssr: false,
-  component: AuthPage,
-});
+export type AppRole = "main_admin" | "sub_admin" | "submitter";
 
-function AuthPage() {
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [loading, setLoading] = useState(false);
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  is_active: boolean;
+}
+
+interface AuthContextValue {
+  user: User | null;
+  session: Session | null;
+  profile: Profile | null;
+  roles: AppRole[];
+  loading: boolean;
+  isAdmin: boolean;
+  isSubAdmin: boolean;
+  isSubmitter: boolean;
+  signOut: () => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadProfileAndRoles = async (uid: string) => {
+    const [p, r] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+    ]);
+    setProfile((p.data as Profile) ?? null);
+    setRoles(((r.data ?? []) as { role: AppRole }[]).map((x) => x.role));
+  };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/dashboard" });
-    });
-  }, [navigate]);
+    let mounted = true;
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Welcome back");
-    navigate({ to: "/dashboard" });
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      if (data.session?.user) {
+        loadProfileAndRoles(data.session.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      setSession(s);
+      setUser(s?.user ?? null);
+      if (s?.user) {
+        setTimeout(() => loadProfileAndRoles(s.user.id), 0);
+      } else {
+        setProfile(null);
+        setRoles([]);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const value: AuthContextValue = {
+    user,
+    session,
+    profile,
+    roles,
+    loading,
+    isAdmin: roles.includes("main_admin"),
+    isSubAdmin: roles.includes("sub_admin"),
+    isSubmitter: roles.includes("submitter"),
+    signOut: async () => {
+      await supabase.auth.signOut();
+      window.location.href = "/auth";
+    },
+    refresh: async () => {
+      if (user) await loadProfileAndRoles(user.id);
+    },
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account created. Signing you in…");
-    navigate({ to: "/dashboard" });
-  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
 
-  return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between p-12 text-white lg:flex" style={{ background: "linear-gradient(135deg, oklch(0.30 0.14 263), oklch(0.42 0.18 263))" }}>
-        <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="Logo" className="h-12 w-12 rounded-full bg-white p-1" />
-          <div>
-            <div className="text-sm font-semibold text-gold">CHRIST EMBASSY</div>
-            <div className="text-lg font-bold">South Group</div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <h2 className="text-4xl font-bold leading-tight">South Group Portal</h2>
-          <p className="max-w-md text-white/80">
-            A centralized reporting and analytics platform for churches, departments, and ministry units across the South Group region.
-          </p>
-          <div className="grid max-w-md grid-cols-2 gap-4 pt-4">
-            {[
-              ["Centralized", "reporting"],
-              ["Real-time", "analytics"],
-              ["Multi-level", "administration"],
-              ["Compliance", "tracking"],
-            ].map(([a, b]) => (
-              <div key={a} className="rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur">
-                <div className="text-sm font-bold text-gold">{a}</div>
-                <div className="text-xs text-white/70">{b}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="text-xs text-white/60">© {new Date().getFullYear()} Christ Embassy South Group. All rights reserved.</div>
-      </div>
-
-      <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md border-border/60 shadow-[var(--shadow-elegant)]">
-          <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto mb-2 grid h-14 w-14 place-items-center rounded-full bg-secondary lg:hidden">
-              <img src={LOGO_URL} alt="Logo" className="h-12 w-12 object-contain" />
-            </div>
-            <CardTitle className="text-2xl">Welcome</CardTitle>
-            <CardDescription>Sign in to access the South Group Portal</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="si-email">Email</Label>
-                    <Input id="si-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@church.org" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="si-pw">Password</Label>
-                      <Link to="/auth/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
-                    </div>
-                    <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign In
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="su-name">Full Name</Label>
-                    <Input id="su-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="su-email">Email</Label>
-                    <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="su-pw">Password</Label>
-                    <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Account
-                  </Button>
-                  <p className="text-center text-xs text-muted-foreground">
-                    New accounts default to Submitter. Admins can change your role.
-                  </p>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 }
