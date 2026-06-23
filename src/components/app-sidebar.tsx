@@ -60,8 +60,9 @@ export function AppSidebar({ onNav }: { onNav?: () => void }) {
           );
         })}
       </nav>
-      <div className="border-t border-sidebar-border p-4 text-[11px] text-sidebar-foreground/60">
-        © {COPYRIGHT_YEAR} Christ Embassy South Group
+      <div className="space-y-1 border-t border-sidebar-border p-4 text-[11px] text-sidebar-foreground/60">
+        <div>© {COPYRIGHT_YEAR} Christ Embassy South Group</div>
+        <div>Built by OUVIA</div>
       </div>
     </aside>
   );

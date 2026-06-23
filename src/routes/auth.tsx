@@ -84,7 +84,10 @@ function AuthPage() {
             ))}
           </div>
         </div>
-        <div className="text-xs text-white/60">© {COPYRIGHT_YEAR} Christ Embassy South Group. All rights reserved.</div>
+        <div className="space-y-1 text-xs text-white/60">
+          <div>© {COPYRIGHT_YEAR} Christ Embassy South Group. All rights reserved.</div>
+          <div>Built by OUVIA</div>
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6">
