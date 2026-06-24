@@ -29,10 +29,11 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Settings2 } from "lucide-react";
+import { Loader2, Plus, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { fetchAllChurchOptions } from "@/lib/churches";
+import { createPortalUser } from "@/lib/user-admin.server";
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersPage,
@@ -66,6 +67,16 @@ function UsersPage() {
   const [assignChurch, setAssignChurch] = useState("");
   const [assignDept, setAssignDept] = useState("");
   const [assignUnit, setAssignUnit] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newFullName, setNewFullName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newRole, setNewRole] = useState<AppRole>("sub_admin");
+  const [newAssignChurch, setNewAssignChurch] = useState("");
+  const [newAssignDept, setNewAssignDept] = useState("");
+  const [newAssignUnit, setNewAssignUnit] = useState("");
 
   const load = async () => {
     const [profiles, allRoles, allAssign, c, d, u] = await Promise.all([
@@ -167,6 +178,51 @@ function UsersPage() {
     load();
   };
 
+  const resetCreateForm = () => {
+    setNewFullName("");
+    setNewEmail("");
+    setNewPassword("");
+    setNewPhone("");
+    setNewRole("sub_admin");
+    setNewAssignChurch("");
+    setNewAssignDept("");
+    setNewAssignUnit("");
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      const assignment = newAssignUnit
+        ? { scope: "unit" as const, unitId: newAssignUnit }
+        : newAssignDept
+          ? { scope: "department" as const, departmentId: newAssignDept }
+          : newAssignChurch
+            ? { scope: "church" as const, churchId: newAssignChurch }
+            : undefined;
+
+      await createPortalUser({
+        data: {
+          email: newEmail,
+          password: newPassword,
+          fullName: newFullName,
+          phone: newPhone || undefined,
+          role: newRole,
+          assignment,
+        },
+      });
+
+      toast.success("User login created. They can sign in immediately with these details.");
+      resetCreateForm();
+      setCreateOpen(false);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filtered = rows.filter(
     (r) =>
       !search ||
@@ -180,15 +236,21 @@ function UsersPage() {
         <div>
           <h2 className="text-2xl font-bold">Users</h2>
           <p className="text-sm text-muted-foreground">
-            Manage roles and assignments for portal users.
+            Create login details and manage roles for portal users.
           </p>
         </div>
-        <Input
-          className="max-w-xs"
-          placeholder="Search users…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            className="max-w-xs"
+            placeholder="Search users…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create User
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -241,6 +303,129 @@ function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create user login</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateUser} className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="new-full-name">Full name</Label>
+                <Input
+                  id="new-full-name"
+                  required
+                  value={newFullName}
+                  onChange={(e) => setNewFullName(e.target.value)}
+                  placeholder="Church member name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-email">Email / Login email</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  required
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="user@church.org"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-password">Custom password</Label>
+                <Input
+                  id="new-password"
+                  type="text"
+                  required
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Create a unique password"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-phone">Phone (optional)</Label>
+                <Input
+                  id="new-phone"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  placeholder="+27..."
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Role</Label>
+              <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sub_admin">Sub Admin</SelectItem>
+                  <SelectItem value="submitter">Report Submitter</SelectItem>
+                  <SelectItem value="main_admin">Main Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-3 rounded-md border p-3">
+              <Label className="text-sm font-semibold">Initial assignment (optional)</Label>
+              <div className="grid gap-2 md:grid-cols-3">
+                <Select value={newAssignChurch} onValueChange={setNewAssignChurch}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Church" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {churches.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={newAssignDept} onValueChange={setNewAssignDept}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {depts.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={newAssignUnit} onValueChange={setNewAssignUnit}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Most specific selection wins (Unit &gt; Department &gt; Church).
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={creating}>
+                {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create login
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">

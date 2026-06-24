@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { LOGO_URL } from "@/lib/logo";
 import { Loader2 } from "lucide-react";
@@ -33,10 +32,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -52,27 +49,6 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(getAuthErrorMessage(error.message));
     toast.success("Welcome back");
-    navigate({ to: "/dashboard" });
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
-    });
-    setLoading(false);
-    if (error) return toast.error(getAuthErrorMessage(error.message));
-    if (!data.session) {
-      toast.success("Account created. Please check your email to confirm the account before signing in.");
-      setTab("signin");
-      setPassword("");
-      return;
-    }
-
-    toast.success("Account created. Signing you in…");
     navigate({ to: "/dashboard" });
   };
 
@@ -122,52 +98,25 @@ function AuthPage() {
               <CardDescription>Sign in to access the South Group Portal</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="si-email">Email</Label>
-                      <Input id="si-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@church.org" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="si-pw">Password</Label>
-                        <Link to="/auth/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
-                      </div>
-                      <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign In
-                    </Button>
-                  </form>
-                </TabsContent>
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="su-name">Full Name</Label>
-                      <Input id="su-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="su-email">Email</Label>
-                      <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="su-pw">Password</Label>
-                      <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Account
-                    </Button>
-                    <p className="text-center text-xs text-muted-foreground">
-                      New accounts default to Submitter. Admins can change your role.
-                    </p>
-                  </form>
-                </TabsContent>
-              </Tabs>
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="si-email">Email</Label>
+                  <Input id="si-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@church.org" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="si-pw">Password</Label>
+                    <Link to="/auth/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
+                  </div>
+                  <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign In
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Accounts are created by the Main Admin. Contact your church administrator for login details.
+                </p>
+              </form>
             </CardContent>
           </Card>
           <div className="text-center text-xs text-muted-foreground lg:hidden">
