@@ -35,10 +35,10 @@ async function assertMainAdmin(userId: string) {
 }
 
 export const createPortalUser = createServerFn({ method: "POST" })
-  .validator(createPortalUserSchema)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context, data }) => {
+  .handler(async ({ context, data: rawData }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const data = createPortalUserSchema.parse(rawData);
 
     await assertMainAdmin(context.userId);
 
