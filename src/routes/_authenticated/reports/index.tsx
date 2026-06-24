@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 interface Row { id: string; report_date: string; status: string; year: number; week_number: number | null; total_attendance: number; souls_won: number; offering_amount: number; churches: { name: string } | null; departments: { name: string } | null; units: { name: string } | null; profiles: { full_name: string; email: string } | null }
 
 function ReportsListPage() {
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
@@ -82,6 +83,10 @@ function ReportsListPage() {
     }
   };
 
+  const openReport = (reportId: string) => {
+    navigate({ to: "/reports/$id", params: { id: reportId } });
+  };
+
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
     if (!search) return true;
@@ -129,7 +134,20 @@ function ReportsListPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow
+                    key={r.id}
+                    role="link"
+                    tabIndex={0}
+                    className="cursor-pointer transition hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    onClick={() => openReport(r.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openReport(r.id);
+                      }
+                    }}
+                    aria-label={`Open full report for ${r.churches?.name ?? "selected church"}`}
+                  >
                     <TableCell>{format(new Date(r.report_date), "MMM d, yyyy")}</TableCell>
                     <TableCell>{r.churches?.name ?? "—"}</TableCell>
                     <TableCell>{r.departments?.name ?? "—"}</TableCell>
@@ -142,7 +160,14 @@ function ReportsListPage() {
                       <div className="flex justify-end gap-1">
                         <Button asChild size="sm" variant="ghost"><Link to="/reports/$id" params={{ id: r.id }}><Eye className="h-4 w-4" /></Link></Button>
                         {isAdmin && (
-                          <Button size="sm" variant="ghost" onClick={() => remove(r)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void remove(r);
+                            }}
+                          >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
