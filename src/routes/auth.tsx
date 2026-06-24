@@ -90,64 +90,69 @@ function AuthPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md border-border/60 shadow-[var(--shadow-elegant)]">
-          <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto mb-2 grid h-14 w-14 place-items-center rounded-full bg-secondary lg:hidden">
-              <img src={LOGO_URL} alt="Logo" className="h-12 w-12 object-contain" />
-            </div>
-            <CardTitle className="text-2xl">Welcome</CardTitle>
-            <CardDescription>Sign in to access the South Group Portal</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="si-email">Email</Label>
-                    <Input id="si-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@church.org" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="si-pw">Password</Label>
-                      <Link to="/auth/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
+      <div className="flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md space-y-4">
+          <Card className="border-border/60 shadow-[var(--shadow-elegant)]">
+            <CardHeader className="space-y-1 text-center">
+              <div className="mx-auto mb-2 grid h-14 w-14 place-items-center rounded-full bg-secondary lg:hidden">
+                <img src={LOGO_URL} alt="Logo" className="h-12 w-12 object-contain" />
+              </div>
+              <CardTitle className="text-2xl">Welcome</CardTitle>
+              <CardDescription>Sign in to access the South Group Portal</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+                <TabsContent value="signin">
+                  <form onSubmit={handleSignIn} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="si-email">Email</Label>
+                      <Input id="si-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@church.org" />
                     </div>
-                    <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign In
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="su-name">Full Name</Label>
-                    <Input id="su-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="su-email">Email</Label>
-                    <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="su-pw">Password</Label>
-                    <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Account
-                  </Button>
-                  <p className="text-center text-xs text-muted-foreground">
-                    New accounts default to Submitter. Admins can change your role.
-                  </p>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="si-pw">Password</Label>
+                        <Link to="/auth/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
+                      </div>
+                      <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign In
+                    </Button>
+                  </form>
+                </TabsContent>
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="su-name">Full Name</Label>
+                      <Input id="su-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="su-email">Email</Label>
+                      <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="su-pw">Password</Label>
+                      <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Account
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground">
+                      New accounts default to Submitter. Admins can change your role.
+                    </p>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+          <div className="text-center text-xs text-muted-foreground lg:hidden">
+            Built by OUVIA
+          </div>
+        </div>
       </div>
     </div>
   );
