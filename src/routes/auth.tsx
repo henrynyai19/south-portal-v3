@@ -12,6 +12,20 @@ import { Loader2 } from "lucide-react";
 
 const COPYRIGHT_YEAR = 2026;
 
+function getAuthErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("email not confirmed")) {
+    return "Your account was created, but the email address has not been confirmed yet. Please check your inbox for the confirmation email, then sign in again.";
+  }
+
+  if (normalized.includes("invalid login credentials")) {
+    return "The email or password is incorrect. Please check the details and try again.";
+  }
+
+  return message;
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   component: AuthPage,
@@ -36,7 +50,7 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getAuthErrorMessage(error.message));
     toast.success("Welcome back");
     navigate({ to: "/dashboard" });
   };
@@ -44,13 +58,20 @@ function AuthPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getAuthErrorMessage(error.message));
+    if (!data.session) {
+      toast.success("Account created. Please check your email to confirm the account before signing in.");
+      setTab("signin");
+      setPassword("");
+      return;
+    }
+
     toast.success("Account created. Signing you in…");
     navigate({ to: "/dashboard" });
   };
