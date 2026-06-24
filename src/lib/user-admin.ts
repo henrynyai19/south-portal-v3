@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { AppRole } from "@/lib/auth";
 
 const createPortalUserSchema = z.object({
@@ -22,6 +21,8 @@ const createPortalUserSchema = z.object({
 });
 
 async function assertMainAdmin(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
   const { data, error } = await supabaseAdmin
     .from("user_roles")
     .select("role")
@@ -37,6 +38,8 @@ export const createPortalUser = createServerFn({ method: "POST" })
   .validator(createPortalUserSchema)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     await assertMainAdmin(context.userId);
 
     const email = data.email.trim().toLowerCase();

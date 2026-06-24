@@ -33,7 +33,7 @@ import { Loader2, Plus, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { fetchAllChurchOptions } from "@/lib/churches";
-import { createPortalUser } from "@/lib/user-admin.server";
+import { createPortalUser } from "@/lib/user-admin";
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersPage,
