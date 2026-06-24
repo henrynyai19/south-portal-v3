@@ -73,7 +73,26 @@ function ReportDetailPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="text-xs text-muted-foreground">Submitted by {report.profiles?.full_name ?? report.profiles?.email}</div>
+          <Section title="General Information" data={{
+            "Church": report.churches?.name ?? "—",
+            "Department": report.departments?.name ?? "—",
+            "Unit": report.units?.name ?? "—",
+            "Reporting Period": report.reporting_period ?? "—",
+            "Week #": report.week_number ?? "—",
+            "Month": report.month ?? "—",
+            "Year": report.year ?? "—",
+            "Report Date": formatDate(report.report_date),
+            "Status": report.status === "approved" ? "Published" : report.status?.replace("_", " ") ?? "—",
+            "Submitted By": report.profiles?.full_name ?? report.profiles?.email ?? "—",
+          }} />
+
+          <Section title="Submission Timeline" data={{
+            "Submitted At": formatDateTime(report.submitted_at),
+            "Published At": formatDateTime(report.approved_at),
+            "Reviewed At": formatDateTime(report.reviewed_at),
+            "Last Updated": formatDateTime(report.updated_at),
+            "Report ID": report.id,
+          }} />
 
           <Section title="Membership Statistics" data={{
             "Total Attendance": report.total_attendance, "Male": report.male_attendance, "Female": report.female_attendance, "Children": report.children_attendance,
@@ -143,6 +162,16 @@ function Section({ title, data }: { title: string; data: Record<string, any> }) 
 
 function fmtMoney(n: number | null | undefined) {
   return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  return format(new Date(value), "PPP");
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  return format(new Date(value), "PPp");
 }
 
 function StatusBadge({ status }: { status: string }) {
