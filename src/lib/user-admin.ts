@@ -24,7 +24,7 @@ const deletePortalUserSchema = z.object({
   userId: z.string().uuid(),
 });
 
-async function assertMainAdmin(userId: string) {
+export async function assertMainAdmin(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data, error } = await supabaseAdmin

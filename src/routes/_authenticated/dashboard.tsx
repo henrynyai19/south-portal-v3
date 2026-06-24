@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,6 @@ import {
   Network,
   CheckCircle2,
   Clock,
-  AlertCircle,
   TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,6 +140,7 @@ function DashboardPage() {
     {
       label: "Total Churches",
       value: stats.churches,
+      to: "/churches",
       icon: Building2,
       accent: "text-primary",
       bg: "bg-primary/10",
@@ -148,6 +148,7 @@ function DashboardPage() {
     {
       label: "Departments",
       value: stats.departments,
+      to: "/departments",
       icon: Network,
       accent: "text-chart-3",
       bg: "bg-chart-3/10",
@@ -155,6 +156,7 @@ function DashboardPage() {
     {
       label: "Units",
       value: stats.units,
+      to: "/units",
       icon: Network,
       accent: "text-chart-4",
       bg: "bg-chart-4/10",
@@ -162,6 +164,7 @@ function DashboardPage() {
     {
       label: "Total Users",
       value: stats.users,
+      to: "/users",
       icon: Users,
       accent: "text-gold-foreground",
       bg: "bg-gold/20",
@@ -169,6 +172,7 @@ function DashboardPage() {
     {
       label: "Reports Submitted",
       value: stats.totalReports,
+      to: "/reports",
       icon: FileText,
       accent: "text-primary",
       bg: "bg-primary/10",
@@ -176,6 +180,7 @@ function DashboardPage() {
     {
       label: "Pending Queue",
       value: stats.pending,
+      to: "/reports",
       icon: Clock,
       accent: "text-warning-foreground",
       bg: "bg-warning/20",
@@ -183,6 +188,7 @@ function DashboardPage() {
     {
       label: "Published Reports",
       value: stats.approved,
+      to: "/reports",
       icon: CheckCircle2,
       accent: "text-success",
       bg: "bg-success/15",
@@ -190,6 +196,7 @@ function DashboardPage() {
     {
       label: "Compliance",
       value: `${stats.compliance}%`,
+      to: "/compliance",
       icon: TrendingUp,
       accent: "text-primary",
       bg: "bg-primary/10",
@@ -209,19 +216,21 @@ function DashboardPage() {
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <Card key={c.label} className="shadow-[var(--shadow-card)]">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium text-muted-foreground">{c.label}</p>
-                    <p className="mt-1 text-2xl font-bold tracking-tight">{c.value}</p>
+            <Link key={c.label} to={c.to} aria-label={`Open ${c.label}`}>
+              <Card className="cursor-pointer shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)] focus-within:ring-2 focus-within:ring-primary/30">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-muted-foreground">{c.label}</p>
+                      <p className="mt-1 text-2xl font-bold tracking-tight">{c.value}</p>
+                    </div>
+                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${c.bg}`}>
+                      <Icon className={`h-5 w-5 ${c.accent}`} />
+                    </div>
                   </div>
-                  <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${c.bg}`}>
-                    <Icon className={`h-5 w-5 ${c.accent}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
       </div>
@@ -350,7 +359,13 @@ function DashboardPage() {
           ) : (
             <div className="divide-y">
               {recent.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-4 py-3">
+                <Link
+                  key={r.id}
+                  to="/reports/$id"
+                  params={{ id: r.id }}
+                  className="flex items-center justify-between gap-4 py-3 transition hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  aria-label={`Open report from ${r.churches?.name ?? "unknown church"}`}
+                >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">
                       {r.churches?.name ?? "—"} <span className="text-muted-foreground">·</span>{" "}
@@ -362,7 +377,7 @@ function DashboardPage() {
                     </div>
                   </div>
                   <StatusBadge status={r.status} />
-                </div>
+                </Link>
               ))}
             </div>
           )}

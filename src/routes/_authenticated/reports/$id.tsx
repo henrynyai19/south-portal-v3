@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 function ReportDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [report, setReport] = useState<any>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +62,6 @@ function ReportDetailPage() {
     setLoading(false);
   };
   useEffect(() => { void load(); }, [id]);
-
-  const isOwner = user?.id === report?.submitted_by;
 
   const remove = async () => {
     if (!confirm("Delete this report?")) return;
@@ -145,7 +143,7 @@ function ReportDetailPage() {
         </CardContent>
       </Card>
 
-      {(isAdmin || (isOwner && report.status === "draft")) && (
+      {isAdmin && (
         <Button variant="destructive" onClick={remove}>Delete Report</Button>
       )}
     </div>
