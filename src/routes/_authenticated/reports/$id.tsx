@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, FileDown, FileSpreadsheet, FileText, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { deleteReportWithAttachments } from "@/lib/report-delete";
 import { getAccessibleReportDetail } from "@/lib/report-admin";
+import { exportSingleReportToExcel, exportSingleReportToPdf } from "@/lib/exporters";
 
 export const Route = createFileRoute("/_authenticated/reports/$id")({
   component: ReportDetailPage,
@@ -60,9 +61,17 @@ function ReportDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button asChild variant="ghost" size="sm"><Link to="/reports"><ArrowLeft className="mr-2 h-4 w-4" />Back</Link></Button>
-        <StatusBadge status={report.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportSingleReportToPdf(report, attachments)}>
+            <FileDown className="mr-2 h-4 w-4" />Export PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => exportSingleReportToExcel(report, attachments)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />Export Excel
+          </Button>
+          <StatusBadge status={report.status} />
+        </div>
       </div>
 
       <Card>
