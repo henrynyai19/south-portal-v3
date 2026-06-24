@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, FileText, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { deleteReportWithAttachments } from "@/lib/report-delete";
+import { getAccessibleReportDetail } from "@/lib/report-admin";
 
 export const Route = createFileRoute("/_authenticated/reports/$id")({
   component: ReportDetailPage,
@@ -24,42 +25,16 @@ function ReportDetailPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("reports")
-      .select("*, churches(name), departments(name), units(name)")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
+    try {
+      const data = await getAccessibleReportDetail({ data: { reportId: id } });
+      setReport(data.report);
+      setAttachments(data.attachments);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "This report is no longer available or your account does not have access to it.");
       navigate({ to: "/reports", replace: true });
-      return;
-    }
-    if (!data) {
-      toast.error("This report is no longer available or your account does not have access to it.");
+    } finally {
       setLoading(false);
-      navigate({ to: "/reports", replace: true });
-      return;
     }
-    let submitterProfile: { full_name: string | null; email: string | null } | null = null;
-    if (data.submitted_by) {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", data.submitted_by)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("[report detail] could not load submitter profile", profileError);
-      } else {
-        submitterProfile = profile;
-      }
-    }
-
-    setReport({ ...data, profiles: submitterProfile });
-    const { data: atts } = await supabase.from("report_attachments").select("*").eq("report_id", id);
-    setAttachments(atts ?? []);
-    setLoading(false);
   };
   useEffect(() => { void load(); }, [id]);
 
