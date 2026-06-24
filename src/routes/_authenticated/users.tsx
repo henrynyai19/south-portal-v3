@@ -29,11 +29,11 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Settings2 } from "lucide-react";
+import { Loader2, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { fetchAllChurchOptions } from "@/lib/churches";
-import { createPortalUser } from "@/lib/user-admin";
+import { createPortalUser, deletePortalUser } from "@/lib/user-admin";
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersPage,
@@ -47,6 +47,7 @@ interface UserRow {
   phone: string | null;
   roles: AppRole[];
   assignments: {
+    id: string;
     scope: string;
     church_id: string | null;
     department_id: string | null;
@@ -85,7 +86,7 @@ function UsersPage() {
         .select("id,email,full_name,phone,is_active")
         .order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("user_assignments").select("user_id, scope, church_id, department_id, unit_id"),
+      supabase.from("user_assignments").select("id, user_id, scope, church_id, department_id, unit_id"),
       fetchAllChurchOptions(),
       supabase.from("departments").select("id,name").order("name"),
       supabase.from("units").select("id,name").order("name"),
@@ -176,6 +177,36 @@ function UsersPage() {
     if (error) return toast.error(error.message);
     await logAudit("user.toggle_active", "user", u.id, { is_active: !u.is_active });
     load();
+  };
+
+  const removeUser = async (u: UserRow) => {
+    const label = u.full_name || u.email;
+    if (!confirm(`Delete ${label}'s login and all related access records? This cannot be undone.`)) return;
+
+    try {
+      await deletePortalUser({ data: { userId: u.id } });
+      toast.success("User login deleted");
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete user");
+    }
+  };
+
+  const removeAssignment = async (assignmentId: string) => {
+    if (!active) return;
+    const { error } = await supabase.from("user_assignments").delete().eq("id", assignmentId);
+    if (error) return toast.error(error.message);
+    await logAudit("user.unassign", "user", active.id, { assignment_id: assignmentId });
+    toast.success("Assignment removed");
+    await load();
+    setActive((current) =>
+      current
+        ? {
+            ...current,
+            assignments: current.assignments.filter((assignment) => assignment.id !== assignmentId),
+          }
+        : current,
+    );
   };
 
   const resetCreateForm = () => {
@@ -294,6 +325,9 @@ function UsersPage() {
                       <Button size="sm" variant="outline" onClick={() => openManage(u)}>
                         <Settings2 className="mr-2 h-4 w-4" />
                         Manage
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => removeUser(u)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </TableCell>
@@ -508,7 +542,7 @@ function UsersPage() {
                 )}
                 {(active?.assignments ?? []).map((a, i) => (
                   <li
-                    key={i}
+                    key={a.id ?? i}
                     className="flex items-center justify-between rounded border px-2 py-1"
                   >
                     <span className="text-xs">
@@ -519,6 +553,14 @@ function UsersPage() {
                           ? depts.find((x) => x.id === a.department_id)?.name
                           : churches.find((x) => x.id === a.church_id)?.name}
                     </span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeAssignment(a.id)}
+                      aria-label="Remove assignment"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </li>
                 ))}
               </ul>

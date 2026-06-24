@@ -1,15 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileDown, Eye } from "lucide-react";
+import { Plus, FileDown, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToExcel, exportReportsToPdf } from "@/lib/exporters";
+import { toast } from "sonner";
+import { deleteReportWithAttachments } from "@/lib/report-delete";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   component: ReportsListPage,
@@ -18,23 +21,39 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 interface Row { id: string; report_date: string; status: string; year: number; week_number: number | null; total_attendance: number; souls_won: number; offering_amount: number; churches: { name: string } | null; departments: { name: string } | null; units: { name: string } | null; profiles: { full_name: string; email: string } | null }
 
 function ReportsListPage() {
+  const { isAdmin } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("reports")
+      .select("id, report_date, status, year, week_number, total_attendance, souls_won, offering_amount, churches(name), departments(name), units(name), profiles!reports_submitted_by_fkey(full_name, email)")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    setRows((data ?? []) as any);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("reports")
-        .select("id, report_date, status, year, week_number, total_attendance, souls_won, offering_amount, churches(name), departments(name), units(name), profiles!reports_submitted_by_fkey(full_name, email)")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      setRows((data ?? []) as any);
-      setLoading(false);
-    };
-    load();
+    void load();
   }, []);
+
+  const remove = async (report: Row) => {
+    if (!isAdmin) return toast.error("Only Main Admin can delete reports.");
+    const label = `${report.churches?.name ?? "this church"} report from ${format(new Date(report.report_date), "MMM d, yyyy")}`;
+    if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+    try {
+      await deleteReportWithAttachments(report.id);
+      toast.success("Report deleted");
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete report");
+    }
+  };
 
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
@@ -93,7 +112,14 @@ function ReportsListPage() {
                     <TableCell>{r.souls_won}</TableCell>
                     <TableCell><StatusBadge status={r.status} /></TableCell>
                     <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost"><Link to="/reports/$id" params={{ id: r.id }}><Eye className="h-4 w-4" /></Link></Button>
+                      <div className="flex justify-end gap-1">
+                        <Button asChild size="sm" variant="ghost"><Link to="/reports/$id" params={{ id: r.id }}><Eye className="h-4 w-4" /></Link></Button>
+                        {isAdmin && (
+                          <Button size="sm" variant="ghost" onClick={() => remove(r)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

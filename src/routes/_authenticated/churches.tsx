@@ -35,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/churches")({
 function ChurchesPage() {
   const { user, isAdmin, isSubAdmin } = useAuth();
   const canManageChurches = isAdmin || isSubAdmin;
+  const canDeleteChurches = isAdmin;
   const [rows, setRows] = useState<Church[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,6 +122,7 @@ function ChurchesPage() {
   };
 
   const remove = async (c: Church) => {
+    if (!canDeleteChurches) return toast.error("Only Main Admin can delete churches.");
     if (!confirm(`Delete ${c.name}?`)) return;
     const { error } = await supabase.from("churches").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
@@ -225,9 +227,11 @@ function ChurchesPage() {
                           <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button size="icon" variant="ghost" onClick={() => remove(c)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {canDeleteChurches && (
+                            <Button size="icon" variant="ghost" onClick={() => remove(c)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       )}
                     </TableCell>

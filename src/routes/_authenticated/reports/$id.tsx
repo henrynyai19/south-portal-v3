@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { logAudit } from "@/lib/audit";
 import { ArrowLeft, FileText, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+import { deleteReportWithAttachments } from "@/lib/report-delete";
 
 export const Route = createFileRoute("/_authenticated/reports/$id")({
   component: ReportDetailPage,
@@ -35,11 +35,13 @@ function ReportDetailPage() {
 
   const remove = async () => {
     if (!confirm("Delete this report?")) return;
-    const { error } = await supabase.from("reports").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    await logAudit("report.delete", "report", id);
-    toast.success("Deleted");
-    navigate({ to: "/reports" });
+    try {
+      await deleteReportWithAttachments(id);
+      toast.success("Deleted");
+      navigate({ to: "/reports" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete report");
+    }
   };
 
   const downloadAttachment = async (a: any) => {
