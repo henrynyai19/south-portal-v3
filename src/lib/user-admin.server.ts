@@ -34,8 +34,8 @@ async function assertMainAdmin(userId: string) {
 }
 
 export const createPortalUser = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .validator(createPortalUserSchema)
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     await assertMainAdmin(context.userId);
 
