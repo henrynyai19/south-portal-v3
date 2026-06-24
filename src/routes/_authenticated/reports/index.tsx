@@ -29,12 +29,39 @@ function ReportsListPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("reports")
-      .select("id, report_date, status, year, week_number, total_attendance, souls_won, offering_amount, churches(name), departments(name), units(name), profiles!reports_submitted_by_fkey(full_name, email)")
+      .select("id, report_date, status, year, week_number, total_attendance, souls_won, offering_amount, submitted_by, churches(name), departments(name), units(name)")
       .order("created_at", { ascending: false })
       .limit(200);
-    setRows((data ?? []) as any);
+
+    if (error) {
+      toast.error(error.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const rows = (data ?? []) as any[];
+    const submitterIds = Array.from(
+      new Set(rows.map((row) => row.submitted_by).filter(Boolean)),
+    );
+
+    let profilesById = new Map<string, { full_name: string | null; email: string | null }>();
+    if (submitterIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", submitterIds);
+
+      if (profilesError) {
+        console.error("[reports list] could not load submitter profiles", profilesError);
+      } else {
+        profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+      }
+    }
+
+    setRows(rows.map((row) => ({ ...row, profiles: profilesById.get(row.submitted_by) ?? null })) as any);
     setLoading(false);
   };
 
