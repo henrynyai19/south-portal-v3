@@ -53,10 +53,10 @@ function AuthPage() {
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between p-12 text-white lg:flex" style={{ background: "linear-gradient(135deg, oklch(0.30 0.14 263), oklch(0.42 0.18 263))" }}>
+    <div className="grid min-h-screen p-3 lg:grid-cols-2 lg:gap-3">
+      <div className="glass-panel hidden flex-col justify-between overflow-hidden rounded-3xl p-12 text-white lg:flex" style={{ background: "linear-gradient(135deg, oklch(0.30 0.14 263 / 0.86), oklch(0.42 0.18 263 / 0.76))" }}>
         <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="Logo" className="h-12 w-12 rounded-full bg-white p-1" />
+          <img src={LOGO_URL} alt="Logo" className="h-12 w-12 rounded-2xl bg-white/90 p-1 shadow-sm" />
           <div>
             <div className="text-sm font-semibold text-gold">CHRIST EMBASSY</div>
             <div className="text-lg font-bold">South Group</div>
@@ -74,7 +74,7 @@ function AuthPage() {
               ["Multi-level", "administration"],
               ["Compliance", "tracking"],
             ].map(([a, b]) => (
-              <div key={a} className="rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <div key={a} className="rounded-2xl border border-white/15 bg-white/10 p-4 shadow-sm backdrop-blur-xl">
                 <div className="text-sm font-bold text-gold">{a}</div>
                 <div className="text-xs text-white/70">{b}</div>
               </div>
@@ -89,9 +89,9 @@ function AuthPage() {
 
       <div className="flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md space-y-4">
-          <Card className="border-border/60 shadow-[var(--shadow-elegant)]">
+          <Card className="shadow-[var(--shadow-elegant)]">
             <CardHeader className="space-y-1 text-center">
-              <div className="mx-auto mb-2 grid h-14 w-14 place-items-center rounded-full bg-secondary lg:hidden">
+              <div className="mx-auto mb-2 grid h-14 w-14 place-items-center rounded-2xl bg-secondary/70 shadow-sm backdrop-blur-xl lg:hidden">
                 <img src={LOGO_URL} alt="Logo" className="h-12 w-12 object-contain" />
               </div>
               <CardTitle className="text-2xl">Welcome</CardTitle>

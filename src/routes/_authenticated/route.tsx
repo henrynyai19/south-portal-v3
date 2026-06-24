@@ -26,13 +26,13 @@ function Shell() {
   const { loading } = useAuth();
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
+      <div className="grid min-h-screen place-items-center">
         <div className="text-sm text-muted-foreground">Loading portal…</div>
       </div>
     );
   }
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex min-h-screen">
       <div className="hidden md:block">
         <AppSidebar />
       </div>

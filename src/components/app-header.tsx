@@ -28,7 +28,7 @@ export function AppHeader() {
   const roleLabel = roles.includes("main_admin") ? "Main Admin" : roles.includes("sub_admin") ? "Sub Admin" : "Submitter";
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-30 mx-3 mt-3 flex h-16 items-center justify-between gap-3 rounded-3xl border border-white/40 bg-card/70 px-4 shadow-[var(--shadow-card)] backdrop-blur-2xl dark:border-white/10 md:mx-6 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -36,7 +36,7 @@ export function AppHeader() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-72 border-white/10 bg-transparent p-0 shadow-none">
             <AppSidebar onNav={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -59,7 +59,7 @@ export function AppHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 px-2">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground">
+              <div className="grid h-8 w-8 place-items-center rounded-xl bg-primary/90 text-primary-foreground shadow-sm">
                 <UserIcon className="h-4 w-4" />
               </div>
               <div className="hidden text-left md:block">

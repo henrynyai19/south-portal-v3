@@ -30,9 +30,9 @@ export function AppSidebar({ onNav }: { onNav?: () => void }) {
   const visible = NAV.filter((n) => !n.roles || n.roles.some((r) => roles.includes(r)));
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
-        <img src={LOGO_URL} alt="South Group" className="h-10 w-10 rounded-full bg-white object-contain p-0.5" />
+    <aside className="glass-panel m-3 flex h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col overflow-hidden rounded-3xl bg-sidebar/80 text-sidebar-foreground">
+      <div className="flex items-center gap-3 border-b border-sidebar-border/70 px-5 py-5">
+        <img src={LOGO_URL} alt="South Group" className="h-10 w-10 rounded-2xl bg-white/90 object-contain p-0.5 shadow-sm" />
         <div className="min-w-0">
           <div className="truncate text-sm font-bold leading-tight text-sidebar-primary">South Group</div>
           <div className="truncate text-[11px] text-sidebar-foreground/70">Reporting Portal</div>
@@ -48,9 +48,9 @@ export function AppSidebar({ onNav }: { onNav?: () => void }) {
               to={item.to}
               onClick={onNav}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
                 active
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                  ? "bg-sidebar-primary/95 text-sidebar-primary-foreground shadow-[0_12px_34px_-18px_var(--gold)]"
                   : "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
@@ -60,7 +60,7 @@ export function AppSidebar({ onNav }: { onNav?: () => void }) {
           );
         })}
       </nav>
-      <div className="space-y-1 border-t border-sidebar-border p-4 text-[11px] text-sidebar-foreground/60">
+      <div className="space-y-1 border-t border-sidebar-border/70 p-4 text-[11px] text-sidebar-foreground/60">
         <div>© {COPYRIGHT_YEAR} Christ Embassy South Group</div>
         <div>Built by OUVIA</div>
       </div>
