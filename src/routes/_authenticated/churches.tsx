@@ -33,7 +33,8 @@ export const Route = createFileRoute("/_authenticated/churches")({
 });
 
 function ChurchesPage() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, isSubAdmin } = useAuth();
+  const canManageChurches = isAdmin || isSubAdmin;
   const [rows, setRows] = useState<Church[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -96,19 +97,24 @@ function ChurchesPage() {
         await logAudit("church.update", "church", editing.id, payload);
         toast.success("Church updated");
       } else {
+        const createPayload = {
+          ...payload,
+          created_by: user?.id ?? null,
+        };
         const { data, error } = await supabase
           .from("churches")
-          .insert(payload)
+          .insert(createPayload)
           .select("id")
           .single();
         if (error) throw error;
-        await logAudit("church.create", "church", data.id, payload);
+        await logAudit("church.create", "church", data.id, createPayload);
         toast.success("Church created");
       }
       setOpen(false);
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save church");
+      console.error("Could not save church", error);
+      toast.error(getChurchSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -132,7 +138,7 @@ function ChurchesPage() {
             Manage churches in the South Group region.
           </p>
         </div>
-        {isAdmin && (
+        {canManageChurches && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNew}>
@@ -214,7 +220,7 @@ function ChurchesPage() {
                     <TableCell>{c.location ?? "—"}</TableCell>
                     <TableCell>{c.pastor_name ?? "—"}</TableCell>
                     <TableCell className="text-right">
-                      {isAdmin && (
+                      {canManageChurches && (
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
                             <Pencil className="h-4 w-4" />
@@ -234,6 +240,28 @@ function ChurchesPage() {
       </Card>
     </div>
   );
+}
+
+function getChurchSaveError(error: unknown) {
+  if (!error || typeof error !== "object") return "Could not save church";
+
+  const maybeError = error as { code?: string; message?: string; details?: string };
+  const message = maybeError.message ?? "";
+  const details = maybeError.details ?? "";
+  const combined = `${message} ${details}`.toLowerCase();
+
+  if (maybeError.code === "23505" && combined.includes("churches_name_key")) {
+    return "A church with this name already exists.";
+  }
+  if (maybeError.code === "23505" && combined.includes("churches_code_key")) {
+    return "A church with this code already exists. Use a different code or leave it blank.";
+  }
+  if (combined.includes("row-level security")) {
+    return "Your account does not have permission to save churches. Please use a main admin or sub-admin account.";
+  }
+  if (message) return message;
+
+  return "Could not save church";
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
