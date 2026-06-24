@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { differenceInDays, format, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { fetchAllChurchOptions } from "@/lib/churches";
 
 export const Route = createFileRoute("/_authenticated/compliance")({
@@ -39,12 +39,8 @@ function CompliancePage() {
     const total = reports.length;
     const submitted = reports.filter((r) => r.status !== "draft").length;
     const approved = reports.filter((r) => r.status === "approved").length;
-    const pending = reports.filter(
-      (r) => r.status === "submitted" || r.status === "under_review",
-    ).length;
-    const overdue = reports.filter(
-      (r) => r.status !== "approved" && differenceInDays(new Date(), new Date(r.report_date)) > 14,
-    ).length;
+    const pending = 0;
+    const overdue = 0;
     return {
       total,
       submitted,
@@ -59,13 +55,8 @@ function CompliancePage() {
     return churches.map((c) => {
       const list = reports.filter((r) => r.church_id === c.id);
       const approved = list.filter((r) => r.status === "approved").length;
-      const pending = list.filter(
-        (r) => r.status === "submitted" || r.status === "under_review",
-      ).length;
-      const overdue = list.filter(
-        (r) =>
-          r.status !== "approved" && differenceInDays(new Date(), new Date(r.report_date)) > 14,
-      ).length;
+      const pending = 0;
+      const overdue = 0;
       const latest = list.sort((a, b) => +new Date(b.report_date) - +new Date(a.report_date))[0];
       const rate = list.length ? Math.round((approved / list.length) * 100) : 0;
       return {
@@ -90,8 +81,8 @@ function CompliancePage() {
       <div className="grid gap-4 md:grid-cols-5">
         <Tile label="Total Reports" value={summary.total} />
         <Tile label="Submitted" value={summary.submitted} color="text-success" />
-        <Tile label="Pending" value={summary.pending} color="text-warning-foreground" />
-        <Tile label="Overdue" value={summary.overdue} color="text-destructive" />
+        <Tile label="Pending Queue" value={summary.pending} color="text-warning-foreground" />
+        <Tile label="Overdue Queue" value={summary.overdue} color="text-destructive" />
         <Tile label="Compliance" value={`${summary.rate}%`} color="text-primary" />
       </div>
 
@@ -106,7 +97,7 @@ function CompliancePage() {
               <TableRow>
                 <TableHead>Church</TableHead>
                 <TableHead>Reports</TableHead>
-                <TableHead>Approved</TableHead>
+                <TableHead>Published</TableHead>
                 <TableHead>Pending</TableHead>
                 <TableHead>Overdue</TableHead>
                 <TableHead>Last Report</TableHead>

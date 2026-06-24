@@ -61,16 +61,12 @@ function DashboardPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [c, d, u, p, r, pend, app, rep] = await Promise.all([
+      const [c, d, u, p, r, app, rep] = await Promise.all([
         supabase.from("churches").select("id", { count: "exact", head: true }),
         supabase.from("departments").select("id", { count: "exact", head: true }),
         supabase.from("units").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("reports").select("id", { count: "exact", head: true }),
-        supabase
-          .from("reports")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "submitted"),
         supabase
           .from("reports")
           .select("id", { count: "exact", head: true })
@@ -94,7 +90,7 @@ function DashboardPage() {
         units: u.count ?? 0,
         users: p.count ?? 0,
         totalReports,
-        pending: pend.count ?? 0,
+        pending: 0,
         approved,
         compliance,
       });
@@ -178,14 +174,14 @@ function DashboardPage() {
       bg: "bg-primary/10",
     },
     {
-      label: "Pending Approval",
+      label: "Pending Queue",
       value: stats.pending,
       icon: Clock,
       accent: "text-warning-foreground",
       bg: "bg-warning/20",
     },
     {
-      label: "Approved Reports",
+      label: "Published Reports",
       value: stats.approved,
       icon: CheckCircle2,
       accent: "text-success",
@@ -234,7 +230,7 @@ function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Attendance & Soul Winning</CardTitle>
-            <CardDescription>Last 6 months (approved reports)</CardDescription>
+            <CardDescription>Last 6 months (published reports)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72 w-full">
@@ -313,7 +309,7 @@ function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Offering Trends</CardTitle>
-          <CardDescription>Monthly total offering (approved reports)</CardDescription>
+          <CardDescription>Monthly total offering (published reports)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-64 w-full">
@@ -381,7 +377,7 @@ function StatusBadge({ status }: { status: string }) {
     draft: { v: "Draft", cls: "bg-muted text-muted-foreground" },
     submitted: { v: "Submitted", cls: "bg-warning/20 text-warning-foreground" },
     under_review: { v: "Under Review", cls: "bg-primary/15 text-primary" },
-    approved: { v: "Approved", cls: "bg-success/15 text-success" },
+    approved: { v: "Published", cls: "bg-success/15 text-success" },
     rejected: { v: "Rejected", cls: "bg-destructive/15 text-destructive" },
   };
   const m = map[status] ?? { v: status, cls: "bg-muted" };

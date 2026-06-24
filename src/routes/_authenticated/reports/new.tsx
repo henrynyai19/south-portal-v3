@@ -94,8 +94,9 @@ function NewReportPage() {
     const payload = {
       ...form,
       submitted_by: user.id,
-      status: asDraft ? "draft" : "submitted",
+      status: asDraft ? "draft" : "approved",
       submitted_at: asDraft ? null : new Date().toISOString(),
+      approved_at: asDraft ? null : new Date().toISOString(),
       church_id: form.church_id || null,
       department_id: form.department_id || null,
       unit_id: form.unit_id || null,
@@ -128,32 +129,7 @@ function NewReportPage() {
 
     await logAudit(asDraft ? "report.save_draft" : "report.submit", "report", data.id);
 
-    // Notify admins (best-effort)
-    if (!asDraft) {
-      const { data: admins } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "main_admin");
-      if (admins) {
-        for (const a of admins) {
-          await supabase
-            .from("notifications")
-            .insert({
-              user_id: a.user_id,
-              title: "New report submitted",
-              body: "A report awaits your review.",
-              type: "report",
-              link: `/reports/${data.id}`,
-            })
-            .then(
-              () => {},
-              () => {},
-            );
-        }
-      }
-    }
-
-    toast.success(asDraft ? "Saved as draft" : "Report submitted");
+    toast.success(asDraft ? "Saved as draft" : "Report submitted and published");
     navigate({ to: "/reports/$id", params: { id: data.id } });
   };
 
@@ -173,7 +149,7 @@ function NewReportPage() {
         <div>
           <h2 className="text-2xl font-bold">New Report</h2>
           <p className="text-sm text-muted-foreground">
-            Capture ministry activity and submit for review.
+            Capture ministry activity and publish it directly to the dashboard.
           </p>
         </div>
         <div className="flex gap-2">

@@ -5,10 +5,9 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
-import { ArrowLeft, CheckCircle2, XCircle, FileText, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, FileText, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/reports/$id")({
@@ -18,10 +17,9 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 function ReportDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { user, isAdmin, isSubAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [report, setReport] = useState<any>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
-  const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -33,23 +31,7 @@ function ReportDetailPage() {
   };
   useEffect(() => { load(); }, [id]);
 
-  const canReview = isAdmin || isSubAdmin;
   const isOwner = user?.id === report?.submitted_by;
-
-  const review = async (next: "under_review" | "approved" | "rejected") => {
-    if (!user) return;
-    const updates: any = { status: next };
-    if (next === "under_review") { updates.reviewed_by = user.id; updates.reviewed_at = new Date().toISOString(); }
-    if (next === "approved") { updates.approved_by = user.id; updates.approved_at = new Date().toISOString(); updates.rejection_reason = null; }
-    if (next === "rejected") { updates.rejection_reason = reason || "No reason provided"; }
-    const { error } = await supabase.from("reports").update(updates).eq("id", id);
-    if (error) return toast.error(error.message);
-    await logAudit(`report.${next}`, "report", id, { reason });
-    // Notify submitter
-    await supabase.from("notifications").insert({ user_id: report.submitted_by, title: `Report ${next.replace("_", " ")}`, body: next === "rejected" ? reason : null, type: "report", link: `/reports/${id}` }).then(() => {}, () => {});
-    toast.success(`Report ${next.replace("_", " ")}`);
-    load();
-  };
 
   const remove = async () => {
     if (!confirm("Delete this report?")) return;
@@ -129,22 +111,6 @@ function ReportDetailPage() {
         </CardContent>
       </Card>
 
-      {canReview && report.status !== "approved" && (
-        <Card>
-          <CardHeader><CardTitle>Review</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {report.status === "submitted" && <Button onClick={() => review("under_review")} variant="secondary">Mark Under Review</Button>}
-            {isAdmin && (report.status === "submitted" || report.status === "under_review") && (
-              <>
-                <Button onClick={() => review("approved")} className="bg-success text-success-foreground hover:bg-success/90"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button>
-                <Textarea placeholder="Reason for rejection (required if rejecting)" value={reason} onChange={(e) => setReason(e.target.value)} />
-                <Button onClick={() => review("rejected")} variant="destructive"><XCircle className="mr-2 h-4 w-4" />Reject</Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {(isAdmin || (isOwner && report.status === "draft")) && (
         <Button variant="destructive" onClick={remove}>Delete Report</Button>
       )}
@@ -180,5 +146,6 @@ function StatusBadge({ status }: { status: string }) {
     approved: "bg-success/15 text-success",
     rejected: "bg-destructive/15 text-destructive",
   };
-  return <Badge className={(map[status] ?? "bg-muted") + " border-0 capitalize"}>{status.replace("_", " ")}</Badge>;
+  const label = status === "approved" ? "Published" : status.replace("_", " ");
+  return <Badge className={(map[status] ?? "bg-muted") + " border-0 capitalize"}>{label}</Badge>;
 }

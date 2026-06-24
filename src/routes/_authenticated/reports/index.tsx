@@ -48,7 +48,9 @@ function ReportsListPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold">Reports</h2>
-          <p className="text-sm text-muted-foreground">All submitted reports.</p>
+          <p className="text-sm text-muted-foreground">
+            Reports are published automatically after submission.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => exportToExcel(filtered, "reports")}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
@@ -66,10 +68,7 @@ function ReportsListPage() {
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="submitted">Submitted</SelectItem>
-                <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="approved">Published</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -115,5 +114,6 @@ function StatusBadge({ status }: { status: string }) {
     approved: "bg-success/15 text-success",
     rejected: "bg-destructive/15 text-destructive",
   };
-  return <Badge className={(map[status] ?? "bg-muted") + " border-0 capitalize"}>{status.replace("_", " ")}</Badge>;
+  const label = status === "approved" ? "Published" : status.replace("_", " ");
+  return <Badge className={(map[status] ?? "bg-muted") + " border-0 capitalize"}>{label}</Badge>;
 }
