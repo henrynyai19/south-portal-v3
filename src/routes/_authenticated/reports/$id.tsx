@@ -23,13 +23,24 @@ function ReportDetailPage() {
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const { data } = await supabase.from("reports").select("*, churches(name), departments(name), units(name), profiles!reports_submitted_by_fkey(full_name, email)").eq("id", id).maybeSingle();
+    setLoading(true);
+    const { data, error } = await supabase.from("reports").select("*, churches(name), departments(name), units(name), profiles!reports_submitted_by_fkey(full_name, email)").eq("id", id).maybeSingle();
+    if (error) {
+      toast.error(error.message);
+      navigate({ to: "/reports", replace: true });
+      return;
+    }
+    if (!data) {
+      toast.error("This report is no longer available or your account does not have access to it.");
+      navigate({ to: "/reports", replace: true });
+      return;
+    }
     setReport(data);
     const { data: atts } = await supabase.from("report_attachments").select("*").eq("report_id", id);
     setAttachments(atts ?? []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { void load(); }, [id]);
 
   const isOwner = user?.id === report?.submitted_by;
 
@@ -51,7 +62,7 @@ function ReportDetailPage() {
   };
 
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (!report) return <p className="text-sm text-muted-foreground">Report not found.</p>;
+  if (!report) return <p className="text-sm text-muted-foreground">Redirecting to reports...</p>;
 
   return (
     <div className="space-y-6">
