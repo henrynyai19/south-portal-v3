@@ -253,9 +253,6 @@ function getChurchSaveError(error: unknown) {
   if (maybeError.code === "23505" && combined.includes("churches_name_key")) {
     return "A church with this name already exists.";
   }
-  if (maybeError.code === "23505" && combined.includes("churches_code_key")) {
-    return "A church with this code already exists. Use a different code or leave it blank.";
-  }
   if (combined.includes("row-level security")) {
     return "Your account does not have permission to save churches. Please use a main admin or sub-admin account.";
   }
