@@ -103,14 +103,20 @@ function ReportDetailPage() {
             "Report ID": report.id,
           }} />
 
-          <Section title="Membership Statistics" data={{
-            "Total Attendance": report.total_attendance, "Male": report.male_attendance, "Female": report.female_attendance, "Children": report.children_attendance,
-            "First Timers": report.first_timers, "New Converts": report.new_converts, "Holy Ghost Receivers": report.holy_ghost_receivers, "Active Members": report.active_members,
-          }} />
-          <Section title="Cell Ministry" data={{ "Cells": report.num_cells, "Meetings Held": report.cell_meetings_held, "Avg Attendance": report.avg_cell_attendance, "Active Leaders": report.active_cell_leaders }} />
-          <Section title="Evangelism" data={{ "Outreaches": report.num_outreaches, "Souls Reached": report.souls_reached, "Souls Won": report.souls_won, "Follow-Ups": report.follow_ups }} />
-          <Section title="Finance" data={{ "Offering": fmtMoney(report.offering_amount), "Partnership": fmtMoney(report.partnership_amount), "Special Giving": fmtMoney(report.special_giving) }} />
-          <Section title="Programs" data={{ "Programs Held": report.programs_held, "Special Events": report.special_events, "Outreach Programs": report.outreach_programs, "Prayer Meetings": report.prayer_meetings }} />
+          {Array.isArray(report.custom_fields) && report.custom_fields.length > 0 ? (
+            <CustomFieldsSection fields={report.custom_fields} />
+          ) : (
+            <>
+              <Section title="Membership Statistics" data={{
+                "Total Attendance": report.total_attendance, "Male": report.male_attendance, "Female": report.female_attendance, "Children": report.children_attendance,
+                "First Timers": report.first_timers, "New Converts": report.new_converts, "Holy Ghost Receivers": report.holy_ghost_receivers, "Active Members": report.active_members,
+              }} />
+              <Section title="Cell Ministry" data={{ "Cells": report.num_cells, "Meetings Held": report.cell_meetings_held, "Avg Attendance": report.avg_cell_attendance, "Active Leaders": report.active_cell_leaders }} />
+              <Section title="Evangelism" data={{ "Outreaches": report.num_outreaches, "Souls Reached": report.souls_reached, "Souls Won": report.souls_won, "Follow-Ups": report.follow_ups }} />
+              <Section title="Finance" data={{ "Offering": fmtMoney(report.offering_amount), "Partnership": fmtMoney(report.partnership_amount), "Special Giving": fmtMoney(report.special_giving) }} />
+              <Section title="Programs" data={{ "Programs Held": report.programs_held, "Special Events": report.special_events, "Outreach Programs": report.outreach_programs, "Prayer Meetings": report.prayer_meetings }} />
+            </>
+          )}
 
           {report.notes && (
             <div>
@@ -169,8 +175,35 @@ function Section({ title, data }: { title: string; data: Record<string, any> }) 
   );
 }
 
+function CustomFieldsSection({ fields }: { fields: Array<{ label?: string; value?: string; type?: string }> }) {
+  return (
+    <div>
+      <h4 className="mb-2 text-sm font-semibold text-primary">Report Details</h4>
+      <div className="grid gap-2 md:grid-cols-2">
+        {fields.map((field, index) => (
+          <div key={`${field.label ?? "field"}-${index}`} className="rounded-md bg-muted/50 p-3">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {field.label || `Field ${index + 1}`}
+            </div>
+            <div className="mt-1 whitespace-pre-wrap text-sm font-semibold">
+              {formatCustomFieldValue(field)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function fmtMoney(n: number | null | undefined) {
   return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatCustomFieldValue(field: { value?: string; type?: string }) {
+  if (!field.value) return "—";
+  if (field.type === "money") return fmtMoney(Number(field.value));
+  if (field.type === "date") return formatDate(field.value);
+  return field.value;
 }
 
 function formatDate(value: string | null | undefined) {

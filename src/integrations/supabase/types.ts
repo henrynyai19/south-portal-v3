@@ -225,6 +225,7 @@ export type Database = {
           children_attendance: number | null
           church_id: string | null
           created_at: string
+          custom_fields: Json
           department_id: string | null
           female_attendance: number | null
           first_timers: number | null
@@ -270,6 +271,7 @@ export type Database = {
           children_attendance?: number | null
           church_id?: string | null
           created_at?: string
+          custom_fields?: Json
           department_id?: string | null
           female_attendance?: number | null
           first_timers?: number | null
@@ -315,6 +317,7 @@ export type Database = {
           children_attendance?: number | null
           church_id?: string | null
           created_at?: string
+          custom_fields?: Json
           department_id?: string | null
           female_attendance?: number | null
           first_timers?: number | null

@@ -125,6 +125,68 @@ export function exportAnalyticsToPdf(title: string, sections: { heading: string;
 }
 
 function buildSingleReportSections(report: any, attachments: any[] = []): ReportExportSection[] {
+  const customSections: ReportExportSection[] =
+    Array.isArray(report.custom_fields) && report.custom_fields.length > 0
+      ? [
+          {
+            heading: "Report Details",
+            rows: report.custom_fields.map((field: any, index: number) => [
+              display(field.label || `Field ${index + 1}`),
+              displayCustomFieldValue(field),
+            ]),
+          },
+        ]
+      : [
+          {
+            heading: "Membership Statistics",
+            rows: [
+              ["Total Attendance", numberDisplay(report.total_attendance)],
+              ["Male", numberDisplay(report.male_attendance)],
+              ["Female", numberDisplay(report.female_attendance)],
+              ["Children", numberDisplay(report.children_attendance)],
+              ["First Timers", numberDisplay(report.first_timers)],
+              ["New Converts", numberDisplay(report.new_converts)],
+              ["Holy Ghost Receivers", numberDisplay(report.holy_ghost_receivers)],
+              ["Active Members", numberDisplay(report.active_members)],
+            ],
+          },
+          {
+            heading: "Cell Ministry",
+            rows: [
+              ["Cells", numberDisplay(report.num_cells)],
+              ["Meetings Held", numberDisplay(report.cell_meetings_held)],
+              ["Average Attendance", numberDisplay(report.avg_cell_attendance)],
+              ["Active Leaders", numberDisplay(report.active_cell_leaders)],
+            ],
+          },
+          {
+            heading: "Evangelism",
+            rows: [
+              ["Outreaches", numberDisplay(report.num_outreaches)],
+              ["Souls Reached", numberDisplay(report.souls_reached)],
+              ["Souls Won", numberDisplay(report.souls_won)],
+              ["Follow-Ups", numberDisplay(report.follow_ups)],
+            ],
+          },
+          {
+            heading: "Finance",
+            rows: [
+              ["Offering", moneyDisplay(report.offering_amount)],
+              ["Partnership", moneyDisplay(report.partnership_amount)],
+              ["Special Giving", moneyDisplay(report.special_giving)],
+            ],
+          },
+          {
+            heading: "Programs",
+            rows: [
+              ["Programs Held", numberDisplay(report.programs_held)],
+              ["Special Events", numberDisplay(report.special_events)],
+              ["Outreach Programs", numberDisplay(report.outreach_programs)],
+              ["Prayer Meetings", numberDisplay(report.prayer_meetings)],
+            ],
+          },
+        ];
+
   return [
     {
       heading: "General Information",
@@ -151,54 +213,7 @@ function buildSingleReportSections(report: any, attachments: any[] = []): Report
         ["Report ID", display(report.id)],
       ],
     },
-    {
-      heading: "Membership Statistics",
-      rows: [
-        ["Total Attendance", numberDisplay(report.total_attendance)],
-        ["Male", numberDisplay(report.male_attendance)],
-        ["Female", numberDisplay(report.female_attendance)],
-        ["Children", numberDisplay(report.children_attendance)],
-        ["First Timers", numberDisplay(report.first_timers)],
-        ["New Converts", numberDisplay(report.new_converts)],
-        ["Holy Ghost Receivers", numberDisplay(report.holy_ghost_receivers)],
-        ["Active Members", numberDisplay(report.active_members)],
-      ],
-    },
-    {
-      heading: "Cell Ministry",
-      rows: [
-        ["Cells", numberDisplay(report.num_cells)],
-        ["Meetings Held", numberDisplay(report.cell_meetings_held)],
-        ["Average Attendance", numberDisplay(report.avg_cell_attendance)],
-        ["Active Leaders", numberDisplay(report.active_cell_leaders)],
-      ],
-    },
-    {
-      heading: "Evangelism",
-      rows: [
-        ["Outreaches", numberDisplay(report.num_outreaches)],
-        ["Souls Reached", numberDisplay(report.souls_reached)],
-        ["Souls Won", numberDisplay(report.souls_won)],
-        ["Follow-Ups", numberDisplay(report.follow_ups)],
-      ],
-    },
-    {
-      heading: "Finance",
-      rows: [
-        ["Offering", moneyDisplay(report.offering_amount)],
-        ["Partnership", moneyDisplay(report.partnership_amount)],
-        ["Special Giving", moneyDisplay(report.special_giving)],
-      ],
-    },
-    {
-      heading: "Programs",
-      rows: [
-        ["Programs Held", numberDisplay(report.programs_held)],
-        ["Special Events", numberDisplay(report.special_events)],
-        ["Outreach Programs", numberDisplay(report.outreach_programs)],
-        ["Prayer Meetings", numberDisplay(report.prayer_meetings)],
-      ],
-    },
+    ...customSections,
     {
       heading: "Notes",
       rows: [["Notes", display(report.notes)]],
@@ -226,6 +241,13 @@ function numberDisplay(value: number | null | undefined) {
 
 function moneyDisplay(value: number | null | undefined) {
   return Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function displayCustomFieldValue(field: { value?: string | number | null; type?: string }) {
+  if (field.value === null || field.value === undefined || field.value === "") return "-";
+  if (field.type === "money") return moneyDisplay(Number(field.value));
+  if (field.type === "date") return formatExportDate(String(field.value));
+  return String(field.value);
 }
 
 function formatExportDate(value: string | null | undefined) {
