@@ -27,6 +27,8 @@ import {
   Legend,
 } from "recharts";
 import { format, subMonths, startOfMonth } from "date-fns";
+import { useAuth } from "@/lib/auth";
+import { getVisibleAssignmentScope } from "@/lib/assignments";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -53,6 +55,7 @@ interface MonthlyRow {
 }
 
 function DashboardPage() {
+  const { user, isAdmin, isSubAdmin } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [monthly, setMonthly] = useState<MonthlyRow[]>([]);
   const [recent, setRecent] = useState<any[]>([]);
@@ -60,11 +63,23 @@ function DashboardPage() {
 
   useEffect(() => {
     const load = async () => {
+      const visibleScope =
+        isSubAdmin && !isAdmin && user
+          ? await getVisibleAssignmentScope(user.id)
+          : null;
       const [c, d, u, p, r, app, rep] = await Promise.all([
-        supabase.from("churches").select("id", { count: "exact", head: true }),
-        supabase.from("departments").select("id", { count: "exact", head: true }),
-        supabase.from("units").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        isAdmin
+          ? supabase.from("churches").select("id", { count: "exact", head: true })
+          : Promise.resolve({ count: 0 }),
+        visibleScope
+          ? Promise.resolve({ count: visibleScope.departmentIds.length })
+          : supabase.from("departments").select("id", { count: "exact", head: true }),
+        visibleScope
+          ? Promise.resolve({ count: visibleScope.unitIds.length })
+          : supabase.from("units").select("id", { count: "exact", head: true }),
+        isAdmin
+          ? supabase.from("profiles").select("id", { count: "exact", head: true })
+          : Promise.resolve({ count: 0 }),
         supabase.from("reports").select("id", { count: "exact", head: true }),
         supabase
           .from("reports")
@@ -131,7 +146,7 @@ function DashboardPage() {
       setLoading(false);
     };
     load();
-  }, []);
+  }, [user?.id, isAdmin, isSubAdmin]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading dashboard…</div>;
   if (!stats) return null;
@@ -201,7 +216,7 @@ function DashboardPage() {
       accent: "text-primary",
       bg: "bg-primary/10",
     },
-  ];
+  ].filter((card) => isAdmin || !["Total Churches", "Total Users"].includes(card.label));
 
   return (
     <div className="space-y-6">

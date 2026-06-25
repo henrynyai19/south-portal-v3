@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { getVisibleAssignmentScope } from "@/lib/assignments";
 
 export const Route = createFileRoute("/_authenticated/search")({
   component: SearchPage,
 });
 
 function SearchPage() {
+  const { user, isAdmin, isSubAdmin } = useAuth();
   const [q, setQ] = useState("");
   const [res, setRes] = useState<{ churches: any[]; departments: any[]; units: any[]; reports: any[]; users: any[] }>({ churches: [], departments: [], units: [], reports: [], users: [] });
 
@@ -17,17 +20,40 @@ function SearchPage() {
     if (!q.trim()) { setRes({ churches: [], departments: [], units: [], reports: [], users: [] }); return; }
     const t = setTimeout(async () => {
       const like = `%${q.trim()}%`;
+      const visibleScope =
+        isSubAdmin && !isAdmin && user
+          ? await getVisibleAssignmentScope(user.id)
+          : null;
+
+      let departmentQuery = supabase.from("departments").select("id,name,description").ilike("name", like).limit(10);
+      let unitQuery = supabase.from("units").select("id,name, departments(name)").ilike("name", like).limit(10);
+
+      if (visibleScope) {
+        departmentQuery =
+          visibleScope.departmentIds.length > 0
+            ? departmentQuery.in("id", visibleScope.departmentIds)
+            : departmentQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+        unitQuery =
+          visibleScope.unitIds.length > 0
+            ? unitQuery.in("id", visibleScope.unitIds)
+            : unitQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+      }
+
       const [c, d, u, r, p] = await Promise.all([
-        supabase.from("churches").select("id,name,location").ilike("name", like).limit(10),
-        supabase.from("departments").select("id,name,description").ilike("name", like).limit(10),
-        supabase.from("units").select("id,name, departments(name)").ilike("name", like).limit(10),
+        isAdmin
+          ? supabase.from("churches").select("id,name,location").ilike("name", like).limit(10)
+          : Promise.resolve({ data: [] }),
+        departmentQuery,
+        unitQuery,
         supabase.from("reports").select("id, report_date, status, churches(name), departments(name)").or(`notes.ilike.${like}`).limit(10),
-        supabase.from("profiles").select("id, full_name, email").or(`full_name.ilike.${like},email.ilike.${like}`).limit(10),
+        isAdmin
+          ? supabase.from("profiles").select("id, full_name, email").or(`full_name.ilike.${like},email.ilike.${like}`).limit(10)
+          : Promise.resolve({ data: [] }),
       ]);
       setRes({ churches: c.data ?? [], departments: d.data ?? [], units: u.data ?? [], reports: r.data ?? [], users: p.data ?? [] });
     }, 200);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, user?.id, isAdmin, isSubAdmin]);
 
   return (
     <div className="space-y-6">
@@ -41,10 +67,10 @@ function SearchPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Section title="Churches" items={res.churches.map((x) => ({ id: x.id, primary: x.name, secondary: x.location, to: "/churches" as const }))} />
+        {isAdmin && <Section title="Churches" items={res.churches.map((x) => ({ id: x.id, primary: x.name, secondary: x.location, to: "/churches" as const }))} />}
         <Section title="Departments" items={res.departments.map((x) => ({ id: x.id, primary: x.name, secondary: x.description, to: "/departments" as const }))} />
         <Section title="Units" items={res.units.map((x) => ({ id: x.id, primary: x.name, secondary: x.departments?.name, to: "/units" as const }))} />
-        <Section title="Users" items={res.users.map((x) => ({ id: x.id, primary: x.full_name || x.email, secondary: x.email, to: "/users" as const }))} />
+        {isAdmin && <Section title="Users" items={res.users.map((x) => ({ id: x.id, primary: x.full_name || x.email, secondary: x.email, to: "/users" as const }))} />}
         <Section title="Reports" items={res.reports.map((x) => ({ id: x.id, primary: `${x.churches?.name ?? "—"} — ${x.departments?.name ?? "—"}`, secondary: `${x.status} · ${x.report_date}`, to: `/reports/${x.id}` }))} />
       </div>
     </div>

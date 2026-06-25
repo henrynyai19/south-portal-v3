@@ -26,6 +26,7 @@ import {
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
+import { getVisibleAssignmentScope } from "@/lib/assignments";
 
 export const Route = createFileRoute("/_authenticated/departments")({
   component: DepartmentsPage,
@@ -39,19 +40,39 @@ interface Dept {
 }
 
 function DepartmentsPage() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, isSubAdmin } = useAuth();
   const [rows, setRows] = useState<Dept[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Dept | null>(null);
   const [form, setForm] = useState({ name: "", code: "", description: "" });
 
   const load = async () => {
-    const { data } = await supabase.from("departments").select("*").order("name");
+    let query = supabase.from("departments").select("*").order("name");
+
+    if (isSubAdmin && !isAdmin) {
+      if (!user) {
+        setRows([]);
+        return;
+      }
+      const scope = await getVisibleAssignmentScope(user.id);
+      if (scope.departmentIds.length === 0) {
+        setRows([]);
+        return;
+      }
+      query = query.in("id", scope.departmentIds);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      toast.error(error.message);
+      setRows([]);
+      return;
+    }
     setRows((data ?? []) as Dept[]);
   };
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [user?.id, isAdmin, isSubAdmin]);
 
   const openNew = () => {
     setEditing(null);

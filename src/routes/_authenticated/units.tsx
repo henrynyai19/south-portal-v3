@@ -33,6 +33,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { fetchAllChurchOptions } from "@/lib/churches";
+import { getVisibleAssignmentScope } from "@/lib/assignments";
 
 export const Route = createFileRoute("/_authenticated/units")({
   component: UnitsPage,
@@ -50,7 +51,7 @@ interface Unit {
 }
 
 function UnitsPage() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, isSubAdmin } = useAuth();
   const [rows, setRows] = useState<Unit[]>([]);
   const [churches, setChurches] = useState<{ id: string; name: string }[]>([]);
   const [depts, setDepts] = useState<{ id: string; name: string }[]>([]);
@@ -65,18 +66,47 @@ function UnitsPage() {
   });
 
   const load = async () => {
+    let unitQuery = supabase.from("units").select("*, churches(name), departments(name)").order("name");
+    let deptQuery = supabase.from("departments").select("id,name").order("name");
+
+    if (isSubAdmin && !isAdmin) {
+      if (!user) {
+        setRows([]);
+        setChurches([]);
+        setDepts([]);
+        return;
+      }
+      const scope = await getVisibleAssignmentScope(user.id);
+      if (scope.unitIds.length === 0 && scope.departmentIds.length === 0) {
+        setRows([]);
+        setChurches([]);
+        setDepts([]);
+        return;
+      }
+      if (scope.unitIds.length > 0) {
+        unitQuery = unitQuery.in("id", scope.unitIds);
+      } else {
+        unitQuery = unitQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+      }
+      if (scope.departmentIds.length > 0) {
+        deptQuery = deptQuery.in("id", scope.departmentIds);
+      }
+    }
+
     const [u, c, d] = await Promise.all([
-      supabase.from("units").select("*, churches(name), departments(name)").order("name"),
-      fetchAllChurchOptions(),
-      supabase.from("departments").select("id,name").order("name"),
+      unitQuery,
+      isAdmin ? fetchAllChurchOptions() : Promise.resolve([]),
+      deptQuery,
     ]);
+    if (u.error) toast.error(u.error.message);
+    if ("error" in d && d.error) toast.error(d.error.message);
     setRows((u.data ?? []) as Unit[]);
     setChurches(c);
     setDepts((d.data ?? []) as { id: string; name: string }[]);
   };
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [user?.id, isAdmin, isSubAdmin]);
 
   const openNew = () => {
     setEditing(null);

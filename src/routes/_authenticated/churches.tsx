@@ -33,8 +33,8 @@ export const Route = createFileRoute("/_authenticated/churches")({
 });
 
 function ChurchesPage() {
-  const { user, isAdmin, isSubAdmin } = useAuth();
-  const canManageChurches = isAdmin || isSubAdmin;
+  const { user, isAdmin } = useAuth();
+  const canManageChurches = isAdmin;
   const canDeleteChurches = isAdmin;
   const [rows, setRows] = useState<Church[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,8 +60,19 @@ function ChurchesPage() {
     }
   };
   useEffect(() => {
-    void load();
-  }, []);
+    if (isAdmin) void load();
+  }, [isAdmin]);
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access restricted</CardTitle>
+          <CardDescription>Church records are only visible to the Main Admin.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   const openNew = () => {
     setEditing(null);

@@ -15,7 +15,7 @@ const NAV: NavItem[] = [
   { to: "/reports/new", label: "New Report", icon: BookOpen, roles: ["submitter", "main_admin", "sub_admin"] },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/compliance", label: "Compliance", icon: ShieldCheck },
-  { to: "/churches", label: "Churches", icon: Building2, roles: ["main_admin", "sub_admin"] },
+  { to: "/churches", label: "Churches", icon: Building2, roles: ["main_admin"] },
   { to: "/departments", label: "Departments", icon: Network, roles: ["main_admin", "sub_admin"] },
   { to: "/units", label: "Units", icon: Network, roles: ["main_admin", "sub_admin"] },
   { to: "/users", label: "Users", icon: Users, roles: ["main_admin"] },

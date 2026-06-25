@@ -115,11 +115,21 @@ function UsersPage() {
     setUnits((u.data ?? []) as any);
   };
   useEffect(() => {
-    load();
-  }, []);
+    if (isAdmin) void load();
+  }, [isAdmin]);
 
-  if (!isAdmin)
-    return <p className="text-sm text-muted-foreground">Only Main Admin can manage users.</p>;
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold">Access restricted</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            User records are only visible to the Main Admin.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const openManage = (u: UserRow) => {
     setActive(u);
