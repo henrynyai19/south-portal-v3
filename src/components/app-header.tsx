@@ -9,7 +9,13 @@ import { AppSidebar } from "./app-sidebar";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
-export function AppHeader() {
+export function AppHeader({
+  isSidebarOpen = true,
+  onOpenSidebar,
+}: {
+  isSidebarOpen?: boolean;
+  onOpenSidebar?: () => void;
+}) {
   const { profile, roles, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -30,6 +36,18 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 mx-3 mt-3 flex h-16 items-center justify-between gap-3 rounded-3xl border border-white/40 bg-card/70 px-4 shadow-[var(--shadow-card)] backdrop-blur-2xl dark:border-white/10 md:mx-6 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
+        {!isSidebarOpen && onOpenSidebar && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onOpenSidebar}
+            aria-label="Open sidebar"
+            className="hidden md:inline-flex"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden">
