@@ -56,7 +56,7 @@ type ReportExportSection = {
 export function exportSingleReportToExcel(report: any, attachments: any[] = []) {
   const wb = XLSX.utils.book_new();
   for (const section of buildSingleReportSections(report, attachments)) {
-    const ws = XLSX.utils.aoa_to_sheet([["Field", "Value"], ...section.rows]);
+    const ws = XLSX.utils.aoa_to_sheet([["Field", "Details"], ...section.rows]);
     ws["!cols"] = [{ wch: 28 }, { wch: 48 }];
     XLSX.utils.book_append_sheet(wb, ws, safeSheetName(section.heading));
   }
@@ -83,7 +83,7 @@ export function exportSingleReportToPdf(report: any, attachments: any[] = []) {
     doc.text(section.heading, 14, y);
     autoTable(doc, {
       startY: y + 4,
-      head: [["Field", "Value"]],
+      head: [["Field", "Details"]],
       body: section.rows,
       headStyles: { fillColor: [11, 61, 145] },
       styles: { fontSize: 9, cellPadding: 2 },

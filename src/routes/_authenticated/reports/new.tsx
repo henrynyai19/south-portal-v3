@@ -53,14 +53,12 @@ type CustomField = {
   id: string;
   label: string;
   value: string;
-  type: "text" | "number" | "money" | "date" | "long_text";
 };
 
 const createCustomField = (): CustomField => ({
   id: crypto.randomUUID(),
   label: "",
   value: "",
-  type: "text",
 });
 
 function NewReportPage() {
@@ -126,10 +124,9 @@ function NewReportPage() {
     if (!user) return;
     setSaving(true);
     const customFields = (form.custom_fields as CustomField[])
-      .map(({ id: _id, label, value, type }) => ({
+      .map(({ id: _id, label, value }) => ({
         label: label.trim(),
         value: value.trim(),
-        type,
       }))
       .filter((field) => field.label || field.value);
 
@@ -307,15 +304,14 @@ function NewReportPage() {
         <CardHeader>
           <CardTitle>Custom Report Details</CardTitle>
           <CardDescription>
-            Add the exact fields this department or unit needs. You can mix numbers, dates,
-            currency, short text, and longer written updates.
+            Add the exact field name and details this department or unit needs.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {form.custom_fields.map((field: CustomField, index: number) => (
             <div
               key={field.id}
-              className="glass-panel-soft grid gap-3 rounded-2xl p-4 md:grid-cols-[1fr_160px_1.5fr_auto]"
+              className="glass-panel-soft grid gap-3 rounded-2xl p-4 md:grid-cols-[1fr_1.6fr_auto]"
             >
               <div className="grid gap-1.5">
                 <Label>Field name</Label>
@@ -326,50 +322,13 @@ function NewReportPage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label>Type</Label>
-                <Select
-                  value={field.type}
-                  onValueChange={(value) =>
-                    updateCustomField(field.id, { type: value as CustomField["type"], value: "" })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="money">Money</SelectItem>
-                    <SelectItem value="date">Date</SelectItem>
-                    <SelectItem value="long_text">Long text</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Value</Label>
-                {field.type === "long_text" ? (
-                  <Textarea
-                    rows={3}
-                    value={field.value}
-                    onChange={(e) => updateCustomField(field.id, { value: e.target.value })}
-                    placeholder="Enter the report detail"
-                  />
-                ) : (
-                  <Input
-                    type={
-                      field.type === "number" || field.type === "money"
-                        ? "number"
-                        : field.type === "date"
-                          ? "date"
-                          : "text"
-                    }
-                    min={field.type === "number" || field.type === "money" ? 0 : undefined}
-                    step={field.type === "money" ? "0.01" : undefined}
-                    value={field.value}
-                    onChange={(e) => updateCustomField(field.id, { value: e.target.value })}
-                    placeholder="Enter value"
-                  />
-                )}
+                <Label>Details</Label>
+                <Textarea
+                  rows={3}
+                  value={field.value}
+                  onChange={(e) => updateCustomField(field.id, { value: e.target.value })}
+                  placeholder="Enter details"
+                />
               </div>
               <div className="flex items-end">
                 <Button
