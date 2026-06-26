@@ -19,7 +19,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { format, subMonths, startOfMonth } from "date-fns";
+import { addMonths, format, subMonths, startOfMonth } from "date-fns";
 import { useAuth } from "@/lib/auth";
 import { getVisibleAssignmentScope } from "@/lib/assignments";
 
@@ -41,10 +41,17 @@ interface MonthlyRow {
   churches_reporting: number;
 }
 
+interface ChurchReportingStatus {
+  id: string;
+  name: string;
+  hasReported: boolean;
+}
+
 function DashboardPage() {
   const { user, isAdmin, isSubAdmin } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [monthly, setMonthly] = useState<MonthlyRow[]>([]);
+  const [churchReportingStatus, setChurchReportingStatus] = useState<ChurchReportingStatus[]>([]);
   const [recent, setRecent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -123,6 +130,36 @@ function DashboardPage() {
       });
       setMonthly(Array.from(buckets.values()));
 
+      if (isAdmin) {
+        const currentMonthStart = startOfMonth(new Date());
+        const nextMonthStart = addMonths(currentMonthStart, 1);
+        const [churchRows, currentReportRows] = await Promise.all([
+          supabase.from("churches").select("id, name").order("name"),
+          supabase
+            .from("reports")
+            .select("church_id")
+            .gte("report_date", format(currentMonthStart, "yyyy-MM-dd"))
+            .lt("report_date", format(nextMonthStart, "yyyy-MM-dd"))
+            .neq("status", "draft"),
+        ]);
+
+        const reportedChurchIds = new Set(
+          (currentReportRows.data ?? [])
+            .map((row: any) => row.church_id)
+            .filter(Boolean),
+        );
+
+        setChurchReportingStatus(
+          (churchRows.data ?? []).map((church: any) => ({
+            id: church.id,
+            name: church.name,
+            hasReported: reportedChurchIds.has(church.id),
+          })),
+        );
+      } else {
+        setChurchReportingStatus([]);
+      }
+
       setLoading(false);
     };
     load();
@@ -181,6 +218,10 @@ function DashboardPage() {
       bg: "bg-success/15",
     },
   ].filter((card) => isAdmin || !["Total Churches", "Total Users"].includes(card.label));
+
+  const reportedChurches = churchReportingStatus.filter((church) => church.hasReported);
+  const notReportedChurches = churchReportingStatus.filter((church) => !church.hasReported);
+  const reportingPeriodLabel = format(new Date(), "MMMM yyyy");
 
   return (
     <div className="space-y-6">
@@ -248,6 +289,56 @@ function DashboardPage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+
+          {isAdmin && (
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-success/20 bg-success/5 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-success">Reported</h4>
+                    <p className="text-xs text-muted-foreground">{reportingPeriodLabel}</p>
+                  </div>
+                  <Badge className="border-0 bg-success/15 text-success">
+                    {reportedChurches.length}
+                  </Badge>
+                </div>
+                {reportedChurches.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No churches have reported yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {reportedChurches.map((church) => (
+                      <Badge key={church.id} className="border-0 bg-success/15 text-success">
+                        {church.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-destructive">Not Reported</h4>
+                    <p className="text-xs text-muted-foreground">Flagged for follow-up</p>
+                  </div>
+                  <Badge className="border-0 bg-destructive/15 text-destructive">
+                    {notReportedChurches.length}
+                  </Badge>
+                </div>
+                {notReportedChurches.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">All churches have reported.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {notReportedChurches.map((church) => (
+                      <Badge key={church.id} className="border-0 bg-destructive/15 text-destructive">
+                        {church.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
