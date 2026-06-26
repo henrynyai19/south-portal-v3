@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/auth/forgot-password")({
-  ssr: false,
   component: ForgotPasswordPage,
 });
 
