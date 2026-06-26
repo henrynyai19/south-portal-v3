@@ -245,7 +245,7 @@ function CompactSection({ title, data }: { title: string; data: Record<string, a
       <h4 className="mb-2 text-sm font-semibold text-primary">{title}</h4>
       <div className="grid gap-x-4 gap-y-2 rounded-xl border border-white/25 bg-muted/30 p-3 text-sm md:grid-cols-2 dark:border-white/10">
         {Object.entries(data).map(([key, value]) => (
-          <div key={key} className="grid grid-cols-[120px_1fr] gap-2">
+          <div key={key} className="grid min-w-0 gap-1 sm:grid-cols-[120px_1fr] sm:gap-2">
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</div>
             <div className="min-w-0 break-words font-medium">{value ?? "—"}</div>
           </div>
@@ -259,7 +259,7 @@ function Section({ title, data }: { title: string; data: Record<string, any> }) 
   return (
     <div>
       <h4 className="mb-2 text-sm font-semibold text-primary">{title}</h4>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
         {Object.entries(data).map(([key, value]) => (
           <div key={key} className="rounded-xl bg-muted/50 p-3">
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{key}</div>
@@ -275,7 +275,7 @@ function CustomFieldsSection({ fields }: { fields: Array<{ label?: string; value
   return (
     <div>
       <h4 className="mb-2 text-sm font-semibold text-primary">Report Details</h4>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid min-w-0 gap-2 md:grid-cols-2">
         {fields.map((field, index) => (
           <div key={`${field.label ?? "field"}-${index}`} className="rounded-xl bg-muted/50 p-3">
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">

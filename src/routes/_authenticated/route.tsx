@@ -35,18 +35,18 @@ function Shell() {
     );
   }
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen w-full overflow-x-hidden">
       {sidebarOpen && (
         <div className="hidden md:block">
           <AppSidebar onClose={() => setSidebarOpen(false)} />
         </div>
       )}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
         <AppHeader
           isSidebarOpen={sidebarOpen}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        <main className="flex-1 overflow-x-hidden p-4 md:p-6">
+        <main className="w-full flex-1 overflow-x-hidden px-3 py-4 sm:px-4 md:p-6">
           <Outlet />
         </main>
       </div>

@@ -34,7 +34,7 @@ export function AppHeader({
   const roleLabel = roles.includes("main_admin") ? "Main Admin" : roles.includes("sub_admin") ? "Sub Admin" : "Submitter";
 
   return (
-    <header className="sticky top-0 z-30 mx-3 mt-3 flex h-16 items-center justify-between gap-3 rounded-3xl border border-white/40 bg-card/70 px-4 shadow-[var(--shadow-card)] backdrop-blur-2xl dark:border-white/10 md:mx-6 md:px-6">
+    <header className="sticky top-0 z-30 mx-2 mt-2 flex min-h-14 items-center justify-between gap-2 rounded-2xl border border-white/40 bg-card/70 px-3 py-2 shadow-[var(--shadow-card)] backdrop-blur-2xl dark:border-white/10 sm:gap-3 md:mx-6 md:mt-3 md:min-h-16 md:rounded-3xl md:px-6">
       <div className="flex min-w-0 items-center gap-3">
         {!isSidebarOpen && onOpenSidebar && (
           <Button
@@ -54,16 +54,16 @@ export function AppHeader({
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 border-white/10 bg-transparent p-0 shadow-none">
+          <SheetContent side="left" className="border-white/10 bg-transparent p-0 shadow-none">
             <AppSidebar onNav={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
         <div className="min-w-0">
-          <h1 className="truncate text-base font-semibold text-foreground md:text-lg">South Group Portal</h1>
+          <h1 className="truncate text-sm font-semibold text-foreground sm:text-base md:text-lg">South Group Portal</h1>
           <p className="hidden text-xs text-muted-foreground md:block">Church Reporting & Analytics</p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <Button asChild variant="ghost" size="icon" className="relative">
           <Link to="/notifications">
             <Bell className="h-5 w-5" />

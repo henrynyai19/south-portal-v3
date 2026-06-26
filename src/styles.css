@@ -186,6 +186,12 @@
       linear-gradient(135deg, oklch(0.10 0.04 263), oklch(0.17 0.055 263));
     background-attachment: fixed;
   }
+  @media (max-width: 767px) {
+    body,
+    .dark body {
+      background-attachment: scroll;
+    }
+  }
   ::selection {
     background: oklch(0.78 0.13 88 / 0.38);
   }

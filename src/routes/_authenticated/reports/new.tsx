@@ -173,20 +173,20 @@ function NewReportPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">New Report</h2>
+          <h2 className="text-xl font-bold sm:text-2xl">New Report</h2>
           <p className="text-sm text-muted-foreground">
             Create a flexible department report with only the fields that matter for this submission.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => save(true)} disabled={saving}>
+        <div className="grid gap-2 sm:flex sm:shrink-0">
+          <Button variant="outline" onClick={() => save(true)} disabled={saving} className="w-full sm:w-auto">
             <Save className="mr-2 h-4 w-4" />
             Save Draft
           </Button>
-          <Button onClick={() => save(false)} disabled={saving}>
+          <Button onClick={() => save(false)} disabled={saving} className="w-full sm:w-auto">
             <Send className="mr-2 h-4 w-4" />
             Submit
           </Button>
@@ -200,7 +200,7 @@ function NewReportPage() {
             Identify the church, department, unit and reporting period.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
+        <CardContent className="grid min-w-0 gap-4 md:grid-cols-3">
           <div className="grid gap-1.5">
             <Label>Church</Label>
             <Select value={form.church_id} onValueChange={(v) => upd("church_id", v)}>
@@ -311,7 +311,7 @@ function NewReportPage() {
           {form.custom_fields.map((field: CustomField, index: number) => (
             <div
               key={field.id}
-              className="glass-panel-soft grid gap-3 rounded-2xl p-4 md:grid-cols-[1fr_1.6fr_auto]"
+              className="glass-panel-soft grid min-w-0 gap-3 rounded-2xl p-3 sm:p-4 md:grid-cols-[1fr_1.6fr_auto]"
             >
               <div className="grid gap-1.5">
                 <Label>Field name</Label>
@@ -335,6 +335,7 @@ function NewReportPage() {
                   type="button"
                   variant="outline"
                   size="icon"
+                  className="w-full md:w-10"
                   aria-label="Remove custom field"
                   onClick={() => removeCustomField(field.id)}
                 >
@@ -343,7 +344,7 @@ function NewReportPage() {
               </div>
             </div>
           ))}
-          <Button type="button" variant="outline" onClick={addCustomField}>
+          <Button type="button" variant="outline" onClick={addCustomField} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Add another field
           </Button>
