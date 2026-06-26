@@ -17,12 +17,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Area,
-  AreaChart,
-  BarChart,
-  Bar,
   CartesianGrid,
-  Legend,
 } from "recharts";
 import { format, subMonths, startOfMonth } from "date-fns";
 import { useAuth } from "@/lib/auth";
@@ -43,11 +38,7 @@ interface Stats {
 
 interface MonthlyRow {
   month: string;
-  attendance: number;
-  souls_won: number;
-  new_converts: number;
-  offering: number;
-  reports: number;
+  churches_reporting: number;
 }
 
 function DashboardPage() {
@@ -84,7 +75,7 @@ function DashboardPage() {
         supabase
           .from("reports")
           .select(
-            "id, report_date, status, total_attendance, souls_won, new_converts, offering_amount, churches(name), departments(name)",
+            "id, report_date, status, churches(name), departments(name)",
           )
           .order("created_at", { ascending: false })
           .limit(6),
@@ -102,36 +93,33 @@ function DashboardPage() {
       });
       setRecent((rep.data ?? []) as any[]);
 
-      // Last 6 months trends
+      // Last 6 months church reporting trend
       const since = startOfMonth(subMonths(new Date(), 5)).toISOString();
       const { data: trendRows } = await supabase
         .from("reports")
-        .select("report_date, total_attendance, souls_won, new_converts, offering_amount")
+        .select("report_date, church_id")
         .gte("report_date", since)
-        .eq("status", "approved");
+        .neq("status", "draft");
 
       const buckets = new Map<string, MonthlyRow>();
+      const reportingChurchesByMonth = new Map<string, Set<string>>();
       for (let i = 5; i >= 0; i--) {
         const m = startOfMonth(subMonths(new Date(), i));
         const key = format(m, "yyyy-MM");
         buckets.set(key, {
           month: format(m, "MMM"),
-          attendance: 0,
-          souls_won: 0,
-          new_converts: 0,
-          offering: 0,
-          reports: 0,
+          churches_reporting: 0,
         });
+        reportingChurchesByMonth.set(key, new Set());
       }
       (trendRows ?? []).forEach((row: any) => {
         const key = format(new Date(row.report_date), "yyyy-MM");
-        const b = buckets.get(key);
-        if (!b) return;
-        b.attendance += row.total_attendance || 0;
-        b.souls_won += row.souls_won || 0;
-        b.new_converts += row.new_converts || 0;
-        b.offering += Number(row.offering_amount) || 0;
-        b.reports += 1;
+        if (!row.church_id) return;
+        reportingChurchesByMonth.get(key)?.add(row.church_id);
+      });
+      reportingChurchesByMonth.forEach((churchIds, key) => {
+        const bucket = buckets.get(key);
+        if (bucket) bucket.churches_reporting = churchIds.size;
       });
       setMonthly(Array.from(buckets.values()));
 
@@ -226,90 +214,10 @@ function DashboardPage() {
         })}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Attendance & Soul Winning</CardTitle>
-            <CardDescription>Last 6 months (published reports)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72 w-full">
-              <ResponsiveContainer initialDimension={{ width: 640, height: 288 }}>
-                <AreaChart data={monthly}>
-                  <defs>
-                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--gold)" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="var(--gold)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--popover)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area
-                    type="monotone"
-                    dataKey="attendance"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    fill="url(#g1)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="souls_won"
-                    stroke="var(--gold)"
-                    strokeWidth={2}
-                    fill="url(#g2)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>New Converts & Reports</CardTitle>
-            <CardDescription>Monthly growth trend</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72 w-full">
-              <ResponsiveContainer initialDimension={{ width: 640, height: 288 }}>
-                <BarChart data={monthly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--popover)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="new_converts" fill="var(--chart-3)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="reports" fill="var(--chart-4)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>Offering Trends</CardTitle>
-          <CardDescription>Monthly total offering (published reports)</CardDescription>
+          <CardTitle>Church Reporting Trend</CardTitle>
+          <CardDescription>Unique churches that submitted reports each month</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-64 w-full">
@@ -324,14 +232,18 @@ function DashboardPage() {
                     border: "1px solid var(--border)",
                     borderRadius: 8,
                   }}
-                  formatter={(v: any) => Number(v).toLocaleString()}
+                  formatter={(value: any) => [
+                    Number(value).toLocaleString(),
+                    "Churches Reporting",
+                  ]}
                 />
                 <Line
                   type="monotone"
-                  dataKey="offering"
-                  stroke="var(--gold)"
+                  dataKey="churches_reporting"
+                  name="Churches Reporting"
+                  stroke="var(--primary)"
                   strokeWidth={3}
-                  dot={{ r: 4, fill: "var(--gold)" }}
+                  dot={{ r: 4, fill: "var(--primary)" }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -363,8 +275,7 @@ function DashboardPage() {
                       {r.departments?.name ?? "—"}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {format(new Date(r.report_date), "PPP")} · {r.total_attendance || 0}{" "}
-                      attendance · {r.souls_won || 0} souls won
+                      {format(new Date(r.report_date), "PPP")} · Report submitted
                     </div>
                   </div>
                   <StatusBadge status={r.status} />
