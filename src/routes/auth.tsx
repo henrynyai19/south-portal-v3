@@ -26,6 +26,7 @@ function getAuthErrorMessage(message: string) {
 }
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   component: AuthPage,
 });
 
