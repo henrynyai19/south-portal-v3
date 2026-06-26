@@ -39,8 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
-    setProfile((p.data as Profile) ?? null);
-    setRoles(((r.data ?? []) as { role: AppRole }[]).map((x) => x.role));
+    const nextProfile = (p.data as Profile) ?? null;
+    const nextRoles = ((r.data ?? []) as { role: AppRole }[]).map((x) => x.role);
+
+    if (!nextProfile?.is_active || nextRoles.length === 0) {
+      setProfile(null);
+      setRoles([]);
+      setSession(null);
+      setUser(null);
+      await supabase.auth.signOut();
+      window.location.href = "/auth";
+      return;
+    }
+
+    setProfile(nextProfile);
+    setRoles(nextRoles);
   };
 
   useEffect(() => {

@@ -163,8 +163,88 @@ export const deletePortalUser = createServerFn({ method: "POST" })
       .eq("id", data.userId)
       .maybeSingle();
 
+    const cleanupAccess = async () => {
+      const { error: assignmentError } = await supabaseAdmin
+        .from("user_assignments")
+        .delete()
+        .eq("user_id", data.userId);
+
+      if (assignmentError) {
+        console.error("[deletePortalUser] assignment cleanup failed", {
+          userId: data.userId,
+          message: assignmentError.message,
+        });
+        throw new Error(assignmentError.message);
+      }
+
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.userId);
+
+      if (roleError) {
+        console.error("[deletePortalUser] role cleanup failed", {
+          userId: data.userId,
+          message: roleError.message,
+        });
+        throw new Error(roleError.message);
+      }
+
+      const { error: notificationError } = await supabaseAdmin
+        .from("notifications")
+        .delete()
+        .eq("user_id", data.userId);
+
+      if (notificationError) {
+        console.error("[deletePortalUser] notification cleanup failed", {
+          userId: data.userId,
+          message: notificationError.message,
+        });
+      }
+    };
+
+    await cleanupAccess();
+
+    let deletionMode: "deleted" | "access_revoked" = "deleted";
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
-    if (deleteError) throw new Error(deleteError.message);
+    if (deleteError) {
+      deletionMode = "access_revoked";
+      console.error("[deletePortalUser] auth delete failed; revoking access instead", {
+        userId: data.userId,
+        message: deleteError.message,
+      });
+
+      const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+        ban_duration: "876000h",
+        user_metadata: {
+          deleted_from_portal: true,
+          deleted_at: new Date().toISOString(),
+        },
+      });
+
+      if (banError) {
+        console.error("[deletePortalUser] auth ban failed", {
+          userId: data.userId,
+          message: banError.message,
+        });
+        throw new Error(
+          `Could not fully delete this user because they have existing records, and access revocation failed: ${banError.message}`,
+        );
+      }
+
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ is_active: false })
+        .eq("id", data.userId);
+
+      if (profileError) {
+        console.error("[deletePortalUser] profile deactivation failed", {
+          userId: data.userId,
+          message: profileError.message,
+        });
+        throw new Error(profileError.message);
+      }
+    }
 
     const { error: auditError } = await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
@@ -174,6 +254,11 @@ export const deletePortalUser = createServerFn({ method: "POST" })
       details: {
         email: profile?.email ?? null,
         full_name: profile?.full_name ?? null,
+        mode: deletionMode,
+        note:
+          deletionMode === "access_revoked"
+            ? "Auth user was retained because historical records reference it; roles and assignments were removed and login access was banned."
+            : null,
       },
     });
 
@@ -181,5 +266,5 @@ export const deletePortalUser = createServerFn({ method: "POST" })
       console.error("[deletePortalUser] audit insert failed", auditError);
     }
 
-    return { id: data.userId };
+    return { id: data.userId, mode: deletionMode };
   });

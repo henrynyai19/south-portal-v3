@@ -78,6 +78,7 @@ function UsersPage() {
   const [newAssignChurch, setNewAssignChurch] = useState("");
   const [newAssignDept, setNewAssignDept] = useState("");
   const [newAssignUnit, setNewAssignUnit] = useState("");
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const load = async () => {
     const [profiles, allRoles, allAssign, c, d, u] = await Promise.all([
@@ -104,11 +105,13 @@ function UsersPage() {
       assignMap.set(a.user_id, arr);
     });
     setRows(
-      (profiles.data ?? []).map((p: any) => ({
-        ...p,
-        roles: roleMap.get(p.id) ?? [],
-        assignments: assignMap.get(p.id) ?? [],
-      })),
+      (profiles.data ?? [])
+        .map((p: any) => ({
+          ...p,
+          roles: roleMap.get(p.id) ?? [],
+          assignments: assignMap.get(p.id) ?? [],
+        }))
+        .filter((p: UserRow) => p.roles.length > 0),
     );
     setChurches(c);
     setDepts((d.data ?? []) as any);
@@ -193,12 +196,23 @@ function UsersPage() {
     const label = u.full_name || u.email;
     if (!confirm(`Delete ${label}'s login and all related access records? This cannot be undone.`)) return;
 
+    setDeletingUserId(u.id);
     try {
-      await deletePortalUser({ data: { userId: u.id } });
-      toast.success("User login deleted");
+      const result = await deletePortalUser({ data: { userId: u.id } });
+      toast.success(
+        result.mode === "access_revoked"
+          ? "User access removed. Their historical reports were preserved."
+          : "User login deleted",
+      );
       await load();
+      if (active?.id === u.id) {
+        setActive(null);
+        setOpen(false);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not delete user");
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -336,8 +350,17 @@ function UsersPage() {
                         <Settings2 className="mr-2 h-4 w-4" />
                         Manage
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => removeUser(u)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeUser(u)}
+                        disabled={deletingUserId === u.id}
+                      >
+                        {deletingUserId === u.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        )}
                       </Button>
                     </div>
                   </TableCell>
