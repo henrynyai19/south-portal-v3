@@ -114,15 +114,44 @@ export const deleteReportAsMainAdmin = createServerFn({ method: "POST" })
         .from("report-attachments")
         .remove(storagePaths);
 
-      if (storageError) throw new Error(storageError.message);
+      if (storageError) {
+        console.error("[deleteReportAsMainAdmin] storage cleanup failed", {
+          reportId: data.reportId,
+          message: storageError.message,
+        });
+      }
     }
 
-    const { error: deleteError } = await supabaseAdmin
+    const { error: attachmentDeleteError } = await supabaseAdmin
+      .from("report_attachments")
+      .delete()
+      .eq("report_id", data.reportId);
+
+    if (attachmentDeleteError) {
+      console.error("[deleteReportAsMainAdmin] attachment row cleanup failed", {
+        reportId: data.reportId,
+        message: attachmentDeleteError.message,
+      });
+      throw new Error(attachmentDeleteError.message);
+    }
+
+    const { data: deletedReport, error: deleteError } = await supabaseAdmin
       .from("reports")
       .delete()
-      .eq("id", data.reportId);
+      .eq("id", data.reportId)
+      .select("id")
+      .maybeSingle();
 
-    if (deleteError) throw new Error(deleteError.message);
+    if (deleteError) {
+      console.error("[deleteReportAsMainAdmin] report delete failed", {
+        reportId: data.reportId,
+        message: deleteError.message,
+      });
+      throw new Error(deleteError.message);
+    }
+    if (!deletedReport) {
+      throw new Error("Report not found or already deleted.");
+    }
 
     const { error: auditError } = await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,

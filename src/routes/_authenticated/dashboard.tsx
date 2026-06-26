@@ -8,8 +8,6 @@ import {
   FileText,
   Network,
   CheckCircle2,
-  Clock,
-  TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -40,9 +38,7 @@ interface Stats {
   units: number;
   users: number;
   totalReports: number;
-  pending: number;
   approved: number;
-  compliance: number;
 }
 
 interface MonthlyRow {
@@ -96,17 +92,13 @@ function DashboardPage() {
 
       const totalReports = r.count ?? 0;
       const approved = app.count ?? 0;
-      const compliance = totalReports ? Math.round((approved / totalReports) * 100) : 0;
-
       setStats({
         churches: c.count ?? 0,
         departments: d.count ?? 0,
         units: u.count ?? 0,
         users: p.count ?? 0,
         totalReports,
-        pending: 0,
         approved,
-        compliance,
       });
       setRecent((rep.data ?? []) as any[]);
 
@@ -193,28 +185,12 @@ function DashboardPage() {
       bg: "bg-primary/10",
     },
     {
-      label: "Pending Queue",
-      value: stats.pending,
-      to: "/reports",
-      icon: Clock,
-      accent: "text-warning-foreground",
-      bg: "bg-warning/20",
-    },
-    {
       label: "Published Reports",
       value: stats.approved,
       to: "/reports",
       icon: CheckCircle2,
       accent: "text-success",
       bg: "bg-success/15",
-    },
-    {
-      label: "Compliance",
-      value: `${stats.compliance}%`,
-      to: "/compliance",
-      icon: TrendingUp,
-      accent: "text-primary",
-      bg: "bg-primary/10",
     },
   ].filter((card) => isAdmin || !["Total Churches", "Total Users"].includes(card.label));
 
